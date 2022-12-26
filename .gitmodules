@@ -6,3 +6,6 @@
 	path = lib/cowprotocol
 	url = https://github.com/cowprotocol/contracts
 	branch = v1.3.1
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/transmissions11/solmate
