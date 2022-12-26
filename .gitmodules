@@ -6,3 +6,7 @@
 	path = lib/contracts
 	url = https://github.com/cowprotocol/contracts
 	branch = v1.3.1
+[submodule "lib/cowprotocol"]
+	path = lib/cowprotocol
+	url = https://github.com/cowprotocol/contracts
+	branch = v1.3.1
