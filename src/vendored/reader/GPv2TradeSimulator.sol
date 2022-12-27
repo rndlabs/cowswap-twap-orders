@@ -9,7 +9,7 @@
 // Original source:
 // <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/reader/GPv2TradeSimulator.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 import {
     GPv2Settlement,

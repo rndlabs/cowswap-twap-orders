@@ -8,7 +8,7 @@
 // Original source:
 // <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/GPv2AllowListAuthentication.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2Authentication} from "./interfaces/GPv2Authentication.sol";
 import {GPv2EIP1967} from "./libraries/GPv2EIP1967.sol";

@@ -12,7 +12,7 @@
 // - Formatted code
 // <https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/utils/ReentrancyGuard.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.

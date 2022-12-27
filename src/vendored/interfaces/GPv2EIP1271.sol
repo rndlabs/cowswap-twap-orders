@@ -8,7 +8,7 @@
 // Original source:
 // <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/interfaces/GPv2EIP1271.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 library GPv2EIP1271 {
     /// @dev Value returned by a call to `isValidSignature` if the signature

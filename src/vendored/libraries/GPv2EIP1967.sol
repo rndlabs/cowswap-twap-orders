@@ -7,7 +7,7 @@
 // Original source:
 // <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/libraries/GPv2EIP1967.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 library GPv2EIP1967 {
     /// @dev The storage slot where the proxy administrator is stored, defined

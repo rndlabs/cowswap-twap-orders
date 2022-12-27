@@ -8,7 +8,7 @@
 // Original source:
 // <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/mixins/GPv2Signing.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2EIP1271, EIP1271Verifier} from "../interfaces/GPv2EIP1271.sol";
 import {GPv2Order, IERC20} from "../libraries/GPv2Order.sol";

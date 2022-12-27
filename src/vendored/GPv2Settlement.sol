@@ -6,10 +6,11 @@
 // - solidity version
 // - remove abicoder v2 pragma
 // - linter config fixes
+// - uint256(-1) -> type(uint256).max
 // Original source:
 // <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/GPv2Settlement.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2VaultRelayer} from "./GPv2VaultRelayer.sol";
 import {GPv2Authentication} from "./interfaces/GPv2Authentication.sol";
@@ -259,7 +260,7 @@ contract GPv2Settlement is GPv2Signing, ReentrancyGuard, StorageAccessible {
     function invalidateOrder(bytes calldata orderUid) external {
         (, address owner, ) = orderUid.extractOrderUidParams();
         require(owner == msg.sender, "GPv2: caller does not own order");
-        filledAmount[orderUid] = uint256(-1);
+        filledAmount[orderUid] = type(uint256).max;
         emit OrderInvalidated(owner, orderUid);
     }
 
