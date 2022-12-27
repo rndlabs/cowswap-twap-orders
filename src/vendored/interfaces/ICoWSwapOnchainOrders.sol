@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+pragma solidity ^0.8;
 
-// Vendored with minor mofications (Solidity version, import paths) from:
-// <https://raw.githubusercontent.com/cowprotocol/ethflowcontract/v0.0.0/rc/src/interfaces/ICoWSwapOnchainOrders.sol>
-
-pragma solidity ^0.8.17;
+// Vendored with minor modifications (import paths) from:
+// <https://github.com/cowprotocol/ethflowcontract/blob/9c74c8ba36ff9ff3e255172b02454f831c066865/src/interfaces/ICoWSwapOnchainOrders.sol>
 
 import "./GPv2Order.sol";
 
@@ -40,5 +39,15 @@ interface ICoWSwapOnchainOrders {
     /// information that is not included in the order data so that it can be passed along when decoding an onchain
     /// order. As an example, a contract that creates orders on behalf of a user could set a different expiration date
     /// than the one specified in the order.
-    event OrderPlacement(address indexed sender, GPv2Order.Data order, OnchainSignature signature, bytes data);
+    event OrderPlacement(
+        address indexed sender,
+        GPv2Order.Data order,
+        OnchainSignature signature,
+        bytes data
+    );
+
+    /// @dev Event emitted to notify that an order was invalidated.
+    ///
+    /// @param orderUid CoW Swap's unique order identifier of the order that has been invalidated.
+    event OrderInvalidation(bytes orderUid);
 }

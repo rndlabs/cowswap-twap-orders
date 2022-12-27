@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity ^0.8.17;
+pragma solidity ^0.8;
 
-// Vendored from https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/libraries/GPv2Order.sol
-// Minor modifications - Solidity version and openzeppelin IERC20 import
-
-import "openzeppelin/interfaces/IERC20.sol";
+import {IERC20} from "../interfaces/IERC20.sol";
 
 /// @title Gnosis Protocol v2 Order Library
 /// @author Gnosis Developers
@@ -41,13 +38,14 @@ library GPv2Order {
     ///         "bytes32 appData," +
     ///         "uint256 feeAmount," +
     ///         "string kind," +
-    ///         "bool partiallyFillable" +
-    ///         "string sellTokenBalance" +
+    ///         "bool partiallyFillable," +
+    ///         "string sellTokenBalance," +
     ///         "string buyTokenBalance" +
     ///     ")"
     /// )
     /// ```
-    bytes32 internal constant TYPE_HASH = hex"d5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489";
+    bytes32 internal constant TYPE_HASH =
+        hex"d5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489";
 
     /// @dev The marker value for a sell order for computing the order struct
     /// hash. This allows the EIP-712 compatible wallets to display a
@@ -57,7 +55,8 @@ library GPv2Order {
     /// ```
     /// keccak256("sell")
     /// ```
-    bytes32 internal constant KIND_SELL = hex"f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee346775";
+    bytes32 internal constant KIND_SELL =
+        hex"f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee346775";
 
     /// @dev The OrderKind marker value for a buy order for computing the order
     /// struct hash.
@@ -66,7 +65,8 @@ library GPv2Order {
     /// ```
     /// keccak256("buy")
     /// ```
-    bytes32 internal constant KIND_BUY = hex"6ed88e868af0a1983e3886d5f3e95a2fafbd6c3450bc229e27342283dc429ccc";
+    bytes32 internal constant KIND_BUY =
+        hex"6ed88e868af0a1983e3886d5f3e95a2fafbd6c3450bc229e27342283dc429ccc";
 
     /// @dev The TokenBalance marker value for using direct ERC20 balances for
     /// computing the order struct hash.
@@ -75,7 +75,8 @@ library GPv2Order {
     /// ```
     /// keccak256("erc20")
     /// ```
-    bytes32 internal constant BALANCE_ERC20 = hex"5a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc9";
+    bytes32 internal constant BALANCE_ERC20 =
+        hex"5a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc9";
 
     /// @dev The TokenBalance marker value for using Balancer Vault external
     /// balances (in order to re-use Vault ERC20 approvals) for computing the
@@ -85,7 +86,8 @@ library GPv2Order {
     /// ```
     /// keccak256("external")
     /// ```
-    bytes32 internal constant BALANCE_EXTERNAL = hex"abee3b73373acd583a130924aad6dc38cfdc44ba0555ba94ce2ff63980ea0632";
+    bytes32 internal constant BALANCE_EXTERNAL =
+        hex"abee3b73373acd583a130924aad6dc38cfdc44ba0555ba94ce2ff63980ea0632";
 
     /// @dev The TokenBalance marker value for using Balancer Vault internal
     /// balances for computing the order struct hash.
@@ -94,7 +96,8 @@ library GPv2Order {
     /// ```
     /// keccak256("internal")
     /// ```
-    bytes32 internal constant BALANCE_INTERNAL = hex"4ac99ace14ee0a5ef932dc609df0943ab7ac16b7583634612f8dc35a4289a6ce";
+    bytes32 internal constant BALANCE_INTERNAL =
+        hex"4ac99ace14ee0a5ef932dc609df0943ab7ac16b7583634612f8dc35a4289a6ce";
 
     /// @dev Marker address used to indicate that the receiver of the trade
     /// proceeds should the owner of the order.
@@ -111,7 +114,11 @@ library GPv2Order {
     /// it is the same as the order owner.
     ///
     /// @return receiver The actual receiver of trade proceeds.
-    function actualReceiver(Data memory order, address owner) internal pure returns (address receiver) {
+    function actualReceiver(Data memory order, address owner)
+        internal
+        pure
+        returns (address receiver)
+    {
         if (order.receiver == RECEIVER_SAME_AS_OWNER) {
             receiver = owner;
         } else {
@@ -124,12 +131,16 @@ library GPv2Order {
     /// @param order The order to compute the EIP-712 signing hash for.
     /// @param domainSeparator The EIP-712 domain separator to use.
     /// @return orderDigest The 32 byte EIP-712 struct hash.
-    function hash(Data memory order, bytes32 domainSeparator) internal pure returns (bytes32 orderDigest) {
+    function hash(Data memory order, bytes32 domainSeparator)
+        internal
+        pure
+        returns (bytes32 orderDigest)
+    {
         bytes32 structHash;
 
         // NOTE: Compute the EIP-712 order struct hash in place. As suggested
-        // in the EIP proposal, noting that the order struct has 10 fields, and
-        // including the type hash `(12 + 1) * 32 = 416` bytes to hash.
+        // in the EIP proposal, noting that the order struct has 12 fields, and
+        // prefixing the type hash `(1 + 12) * 32 = 416` bytes to hash.
         // <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md#rationale-for-encodedata>
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -166,10 +177,12 @@ library GPv2Order {
     /// parameters.
     /// @param owner The address of the user who owns this order.
     /// @param validTo The epoch time at which the order will stop being valid.
-    function packOrderUidParams(bytes memory orderUid, bytes32 orderDigest, address owner, uint32 validTo)
-        internal
-        pure
-    {
+    function packOrderUidParams(
+        bytes memory orderUid,
+        bytes32 orderDigest,
+        address owner,
+        uint32 validTo
+    ) internal pure {
         require(orderUid.length == UID_LENGTH, "GPv2: uid buffer overflow");
 
         // NOTE: Write the order UID to the allocated memory buffer. The order
@@ -215,7 +228,11 @@ library GPv2Order {
     function extractOrderUidParams(bytes calldata orderUid)
         internal
         pure
-        returns (bytes32 orderDigest, address owner, uint32 validTo)
+        returns (
+            bytes32 orderDigest,
+            address owner,
+            uint32 validTo
+        )
     {
         require(orderUid.length == UID_LENGTH, "GPv2: invalid uid");
 
