@@ -1,8 +1,25 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity ^0.8;
-pragma abicoder v2;
 
-import {GPv2Settlement} from "../GPv2Settlement.sol";
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - import paths
+// - solidity version
+// - remove abicoder v2 pragma
+// - linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/reader/GPv2TradeSimulator.sol>
+
+pragma solidity ^0.8;
+
+import {
+    GPv2Settlement,
+    GPv2Transfer,
+    IVault,
+    SafeCast,
+    IERC20,
+    GPv2Interaction,
+    GPv2Order
+} from "../GPv2Settlement.sol";
 
 /// @title Gnosis Protocol v2 Trade Simulator
 /// @author Gnosis Developers

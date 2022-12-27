@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: MIT
 
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - Import paths
+// - Solidity version
+// - Linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/interfaces/IERC20.sol>
+
 // Vendored from OpenZeppelin contracts with minor modifications:
 // - Modified Solidity version
 // - Formatted code

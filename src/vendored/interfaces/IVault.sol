@@ -1,4 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - Import paths
+// - Solidity version
+// - remove abicoder v2 pragma
+// - linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/interfaces/IVault.sol>
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +23,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pragma solidity ^0.8;
-pragma abicoder v2;
 
 import {IERC20} from "./IERC20.sol";
 

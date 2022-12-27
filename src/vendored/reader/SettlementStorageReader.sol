@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - solidity version
+// - remove abicoder v2 pragma
+// - linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/reader/SettlementStorageReader.sol>
+
 pragma solidity ^0.8;
-pragma abicoder v2;
 
 /// @title Gnosis Protocol v2 Settlement Storage Reader
 /// @author Gnosis Developers

@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - import paths
+// - solidity version
+// - remove abicoder v2 pragma
+// - linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/GPv2Settlement.sol>
+
 pragma solidity ^0.8;
-pragma abicoder v2;
 
 import {GPv2VaultRelayer} from "./GPv2VaultRelayer.sol";
 import {GPv2Authentication} from "./interfaces/GPv2Authentication.sol";

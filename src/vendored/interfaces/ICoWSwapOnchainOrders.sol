@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity ^0.8;
 
-// Vendored with minor modifications (import paths) from:
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - import paths
+// - solidity version
+// - linter config fixes
+// Original source:
 // <https://github.com/cowprotocol/ethflowcontract/blob/9c74c8ba36ff9ff3e255172b02454f831c066865/src/interfaces/ICoWSwapOnchainOrders.sol>
 
-import "./GPv2Order.sol";
+pragma solidity ^0.8;
+
+import {GPv2Order} from "../libraries/GPv2Order.sol";
 
 /// @title CoW Swap Onchain Order Creator Interface
 /// @author CoW Swap Developers

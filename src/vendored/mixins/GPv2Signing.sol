@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - import paths
+// - solidity version
+// - Linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/mixins/GPv2Signing.sol>
+
 pragma solidity ^0.8;
 
-import {GPv2EIP1271} from "../interfaces/GPv2EIP1271.sol";
-import {GPv2Order} from "../libraries/GPv2Order.sol";
+import {GPv2EIP1271, EIP1271Verifier} from "../interfaces/GPv2EIP1271.sol";
+import {GPv2Order, IERC20} from "../libraries/GPv2Order.sol";
 import {GPv2Trade} from "../libraries/GPv2Trade.sol";
 
 /// @title Gnosis Protocol v2 Signing Library.

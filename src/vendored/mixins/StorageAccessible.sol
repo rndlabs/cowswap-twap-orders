@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/* solhint-disable max-line-length */
+// Vendored with minor modifications:
+// - import paths
+// - solidity version
+// - linter config fixes
+// Original source:
+// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/mixins/StorageAccessible.sol>
+
 // Vendored from Gnosis utility contracts with minor modifications:
 // - Modified Solidity version
 // - Formatted code
