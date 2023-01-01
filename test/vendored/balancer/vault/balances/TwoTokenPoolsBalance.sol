@@ -87,7 +87,10 @@ abstract contract TwoTokenPoolsBalance is PoolRegistry {
 
         // A Two Token Pool with no registered tokens is identified by having zero addresses for tokens A and B.
         TwoTokenPoolTokens storage poolTokens = _twoTokenPoolTokens[poolId];
-        _require(poolTokens.tokenA == IERC20(0) && poolTokens.tokenB == IERC20(0), Errors.TOKENS_ALREADY_SET);
+        _require(
+            poolTokens.tokenA == IERC20(address(0)) && poolTokens.tokenB == IERC20(address(0)),
+            Errors.TOKENS_ALREADY_SET
+        );
 
         // Since tokenX < tokenY, tokenX is A and tokenY is B
         poolTokens.tokenA = tokenX;
@@ -244,7 +247,7 @@ abstract contract TwoTokenPoolsBalance is PoolRegistry {
 
         // Both tokens will either be zero (if unregistered) or non-zero (if registered), but we keep the full check for
         // clarity.
-        if (tokenA == IERC20(0) || tokenB == IERC20(0)) {
+        if (tokenA == IERC20(address(0)) || tokenB == IERC20(address(0))) {
             return (new IERC20[](0), new bytes32[](0));
         }
 
@@ -380,7 +383,7 @@ abstract contract TwoTokenPoolsBalance is PoolRegistry {
         TwoTokenPoolTokens storage poolTokens = _twoTokenPoolTokens[poolId];
 
         // The zero address can never be a registered token.
-        return (token == poolTokens.tokenA || token == poolTokens.tokenB) && token != IERC20(0);
+        return (token == poolTokens.tokenA || token == poolTokens.tokenB) && token != IERC20(address(0));
     }
 
     /**

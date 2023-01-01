@@ -45,13 +45,13 @@ abstract contract FlashLoans is Fees, ReentrancyGuard, TemporarilyPausable {
         uint256[] memory preLoanBalances = new uint256[](tokens.length);
 
         // Used to ensure `tokens` is sorted in ascending order, which ensures token uniqueness.
-        IERC20 previousToken = IERC20(0);
+        IERC20 previousToken = IERC20(address(0));
 
         for (uint256 i = 0; i < tokens.length; ++i) {
             IERC20 token = tokens[i];
             uint256 amount = amounts[i];
 
-            _require(token > previousToken, token == IERC20(0) ? Errors.ZERO_TOKEN : Errors.UNSORTED_TOKENS);
+            _require(token > previousToken, token == IERC20(address(0)) ? Errors.ZERO_TOKEN : Errors.UNSORTED_TOKENS);
             previousToken = token;
 
             preLoanBalances[i] = token.balanceOf(address(this));

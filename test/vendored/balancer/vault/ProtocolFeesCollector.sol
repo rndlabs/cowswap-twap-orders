@@ -56,7 +56,7 @@ contract ProtocolFeesCollector is Authentication, ReentrancyGuard {
     constructor(IVault _vault)
         // The ProtocolFeesCollector is a singleton, so it simply uses its own address to disambiguate action
         // identifiers.
-        Authentication(bytes32(uint256(address(this))))
+        Authentication(bytes32(uint256(uint160(address(this)))))
     {
         vault = _vault;
     }

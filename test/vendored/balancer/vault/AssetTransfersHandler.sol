@@ -129,7 +129,7 @@ abstract contract AssetTransfersHandler is AssetHelpers {
 
         uint256 excess = msg.value - amountUsed;
         if (excess > 0) {
-            msg.sender.sendValue(excess);
+            payable(msg.sender).sendValue(excess);
         }
     }
 
