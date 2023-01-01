@@ -14,7 +14,7 @@
 
 pragma solidity >=0.8.0 <0.9.0;
 
-import {IERC20} from "../../lib/openzeppelin/IERC20.sol";
+import {IERC20} from "../../../src/vendored/interfaces/IERC20.sol";
 
 /**
  * @dev Interface for the WETH token contract used internally for wrapping and unwrapping, to support

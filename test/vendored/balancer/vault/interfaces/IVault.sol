@@ -12,9 +12,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import "../../lib/openzeppelin/IERC20.sol";
+import "../../../../../src/vendored/interfaces/IERC20.sol";
 
-import "./IWETH.sol";
+import "../../../interfaces/IWETH.sol";
 import "./IAsset.sol";
 import "./IAuthorizer.sol";
 import "./IFlashLoanRecipient.sol";

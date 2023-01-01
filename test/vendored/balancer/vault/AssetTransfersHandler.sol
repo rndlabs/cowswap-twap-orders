@@ -16,12 +16,12 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "../lib/math/Math.sol";
 import "../lib/helpers/BalancerErrors.sol";
-import "../lib/openzeppelin/IERC20.sol";
+import "../../../../src/vendored/interfaces/IERC20.sol";
 import "../lib/helpers/AssetHelpers.sol";
 import "../lib/openzeppelin/SafeERC20.sol";
 import "../lib/openzeppelin/Address.sol";
 
-import "./interfaces/IWETH.sol";
+import "../../interfaces/IWETH.sol";
 import "./interfaces/IAsset.sol";
 import "./interfaces/IVault.sol";
 

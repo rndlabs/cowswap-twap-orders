@@ -14,7 +14,7 @@
 
 pragma solidity >=0.8.0 <0.9.0;
 
-import "../../lib/openzeppelin/IERC20.sol";
+import "../../../../../src/vendored/interfaces/IERC20.sol";
 
 import "./IVault.sol";
 

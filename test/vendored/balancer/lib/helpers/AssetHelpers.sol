@@ -14,10 +14,10 @@
 
 pragma solidity >=0.8.0 <0.9.0;
 
-import "../openzeppelin/IERC20.sol";
+import "../../../../../src/vendored/interfaces/IERC20.sol";
 
 import "../../vault/interfaces/IAsset.sol";
-import "../../vault/interfaces/IWETH.sol";
+import "../../../interfaces/IWETH.sol";
 
 abstract contract AssetHelpers {
     // solhint-disable-next-line var-name-mixedcase

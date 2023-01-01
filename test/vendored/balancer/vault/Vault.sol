@@ -15,7 +15,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "./interfaces/IAuthorizer.sol";
-import "./interfaces/IWETH.sol";
+import "../../interfaces/IWETH.sol";
 
 import "./VaultAuthorization.sol";
 import "./FlashLoans.sol";
