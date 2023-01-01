@@ -5,3 +5,7 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
+[submodule "lib/safe"]
+	path = lib/safe
+	url = https://github.com/safe-global/safe-contracts
+	branch = v1.3.0
