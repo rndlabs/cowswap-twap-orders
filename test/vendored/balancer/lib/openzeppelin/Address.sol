@@ -2,7 +2,7 @@
 
 /* solhint-disable max-line-length */
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 import "../helpers/BalancerErrors.sol";
 

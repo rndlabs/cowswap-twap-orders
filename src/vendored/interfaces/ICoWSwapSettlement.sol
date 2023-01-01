@@ -8,7 +8,7 @@
 // Original source:
 // <https://github.com/cowprotocol/ethflowcontract/blob/9c74c8ba36ff9ff3e255172b02454f831c066865/src/interfaces/ICoWSwapSettlement.sol>
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 /// @title CoW Swap Settlement Contract Interface
 /// @author CoW Swap Developers

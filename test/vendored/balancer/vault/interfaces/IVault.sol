@@ -12,8 +12,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma experimental ABIEncoderV2;
-
 import "../../lib/openzeppelin/IERC20.sol";
 
 import "./IWETH.sol";
@@ -25,7 +23,7 @@ import "../ProtocolFeesCollector.sol";
 import "../../lib/helpers/ISignaturesValidator.sol";
 import "../../lib/helpers/ITemporarilyPausable.sol";
 
-pragma solidity ^0.8;
+pragma solidity >=0.8.0 <0.9.0;
 
 /**
  * @dev Full external interface for the Vault core contract - no external or public methods exist in the contract that

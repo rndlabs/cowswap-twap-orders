@@ -16,8 +16,7 @@
 // implementation and terminology and interfaces are intentionally kept
 // similar
 
-pragma solidity ^0.8;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0 <0.9.0;
 
 import "../lib/helpers/BalancerErrors.sol";
 import "../lib/openzeppelin/IERC20.sol";
