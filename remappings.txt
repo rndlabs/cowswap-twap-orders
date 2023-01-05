@@ -2,5 +2,3 @@ ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
 solmate=lib/solmate/src/
 safe=lib/safe/contracts/
-@gnosis.pm/safe-contracts=lib/safe/
-zodiac=lib/zodiac/contracts/
