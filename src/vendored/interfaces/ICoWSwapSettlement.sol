@@ -5,6 +5,7 @@
 // - import paths
 // - solidity version
 // - linter config fixes
+// - add domainSeparator
 // Original source:
 // <https://github.com/cowprotocol/ethflowcontract/blob/9c74c8ba36ff9ff3e255172b02454f831c066865/src/interfaces/ICoWSwapSettlement.sol>
 
@@ -27,4 +28,11 @@ interface ICoWSwapSettlement {
     /// @dev The address of the vault relayer: the contract that handles withdrawing tokens from the user to the
     /// settlement contract. A user who wants to sell a token on CoW Swap must approve this contract to spend the token.
     function vaultRelayer() external returns (address);
+
+    /// @dev The domain separator used for signing orders that gets mixed in
+    /// making signatures for different domains incompatible. This domain
+    /// separator is computed following the EIP-712 standard and has replay
+    /// protection mixed in so that signed orders are only valid for specific
+    /// GPv2 contracts.
+    function domainSeparator() external returns (bytes32);
 }
