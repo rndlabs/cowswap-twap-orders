@@ -17,10 +17,12 @@ abstract contract ChainFallbackHandler {
     fallback() external {
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            /// @dev As the CHAIN_FALLBACK_HANDLER is a constant value, we can skip the check for the fallback handler
+            /// @dev In the below code, we substitute `CHAIN_FALLBACK_HANDLER` for `handler` to save gas.
+            /// As the CHAIN_FALLBACK_HANDLER is a constant value, we can skip the check for the fallback handler
             /// address being zero. Code commented out below is the original code from Gnosis Safe's FallbackManager 
-            // contract, and is left here for reference and ease of auditing.
-            // if iszero(CHAIN_FALLBACK_HANDLER) {
+            /// contract, and is left here for reference and ease of auditing.
+            // let handler := sload(slot)
+            // if iszero(handler) {
             //     return(0, 0)
             // }
 
@@ -29,7 +31,10 @@ abstract contract ChainFallbackHandler {
             // Then the address without padding is stored right after the calldata
             mstore(calldatasize(), shl(96, caller()))
             // Add 20 bytes for the address appended add the end
-            let success := call(gas(), CHAIN_FALLBACK_HANDLER, 0, 0, add(calldatasize(), 20), 0, 0)
+            /// @dev The below line is the only change from the original code from Gnosis Safe's FallbackManager
+            /// contract. We both substitute `CHAIN_FALLBACK_HANDLER` for `handler` and use `delegatecall` instead
+            /// of `staticcall` to preserve `msg.sender` in the chained handler.
+            let success := delegatecall(gas(), CHAIN_FALLBACK_HANDLER, 0, add(calldatasize(), 20), 0, 0)
             returndatacopy(0, 0, returndatasize())
             if iszero(success) {
                 revert(0, returndatasize())
