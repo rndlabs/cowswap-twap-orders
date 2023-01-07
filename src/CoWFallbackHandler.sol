@@ -3,11 +3,23 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import {ConditionalOrder} from "./vendored/interfaces/ConditionalOrder.sol";
 import {CompatibilityFallbackHandler} from "./vendored/safe/CompatibilityFallbackHandler.sol";
+import {GPv2Settlement} from "./vendored/GPv2Settlement.sol";
 
 /// @title CoW Fallback Handler
 /// @author mfw78 <mfw78@rndlabs.xyz>
 /// @dev This is an abstract contract that smart orders can inherit from.
 abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, ConditionalOrder {
+
+    /// @dev The domain separator from the settlement contract used to verify
+    /// signatures.
+    bytes32 internal immutable SETTLEMENT_DOMAIN_SEPARATOR;
+
+    constructor(GPv2Settlement _settlementContract) {
+        /// @dev Cache the domain separator from the settlement contract to save
+        /// on gas costs. Any change to the settlement contract will require a
+        /// new deployment of this contract.
+        SETTLEMENT_DOMAIN_SEPARATOR = _settlementContract.domainSeparator();
+    }
 
     /// @dev Should return whether the signature provided is valid for the provided data. 
     /// 1. Try to verify the order using the smart order logic.
