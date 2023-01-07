@@ -35,6 +35,7 @@ interface ConditionalOrder {
     /// @dev This error is returned if the order condition is not met.
     error OrderNotValid();
     error OrderNotSigned();
+    error OrderExpired();
     error OrderCancelled();
 
     /// @dev This event is emitted by the Safe when a conditional order is created.

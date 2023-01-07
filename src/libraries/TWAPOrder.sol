@@ -80,7 +80,7 @@ library TWAPOrder {
 
         // Order is not valid after the last part.
         if (block.timestamp > self.t0 + (self.n * self.t)) {
-            revert ConditionalOrder.OrderNotValid();
+            revert ConditionalOrder.OrderExpired();
         }
 
         // get the TWAP bundle part number and this corresponding `validTo`
