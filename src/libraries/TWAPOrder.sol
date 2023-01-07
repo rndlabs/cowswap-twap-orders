@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 // TODO: Analyse gas usage of assembly vs. abi.encodePacked in hash()
 
 import "../interfaces/ConditionalOrder.sol";
+import "../libraries/ConditionalOrderLib.sol";
 import {IERC20} from "../vendored/interfaces/IERC20.sol";
 import {GPv2Order} from "../vendored/libraries/GPv2Order.sol";
 import {SafeCast} from "../vendored/libraries/SafeCast.sol";
@@ -12,8 +13,7 @@ import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 library TWAPOrder {
     using SafeCast for uint256;
-    using SafeSigUtils for GnosisSafe;
-    using TWAPOrder for TWAPOrder.Data;
+    using ConditionalOrderLib for bytes;
 
     // --- structs
 
@@ -37,36 +37,27 @@ library TWAPOrder {
 
     // --- functions
 
-    /// @dev Return the EIP-712 `structHash` for the specified order.
-    /// @param self The TWAP order to `structHash` for.
+    /// @dev Hash the TWAP bundle IAW EIP-712.
+    /// @param self The TWAP bundle to get the `structHash` for.
     /// @param domainSeparator The EIP-712 domain separator to use.
-    /// @return twapDigest The TWAP `structHash` for signing.
-    function hash(Data memory self, bytes32 domainSeparator) 
-        internal
-        pure
-        returns (bytes32 twapDigest)
-    {
-        return keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                domainSeparator,
-                keccak256(
-                    abi.encode(
-                        CONDITIONAL_ORDER_TYPE_HASH,
-                        keccak256(abi.encode(self))
-                    )
-                )
-            )
-        );
+    /// @return twapDigest The TWAP bundle's `structHash` for signing.
+    function hash(Data memory self, bytes32 domainSeparator) internal pure returns (bytes32) {
+        return abi.encode(self).hash(domainSeparator);
     }
 
-    /// @dev Determine if the order has been signed
-    /// @param self The TWAP order to `structHash` for.
+    /// @dev Determine if the TWAP bundle has been signed and not cancelled
+    /// @param self The TWAP bundle struct to `structHash`.
     /// @param safe The Gnosis Safe to check for a signature.
-    /// @param domainSeparator The EIP-712 domain separator (of the settlement contract) to use.
-    function isSigned(Data memory self, GnosisSafe safe, bytes32 domainSeparator) internal view returns (bool) {
-        bytes32 messageHash = safe.getMessageHash(abi.encode(self.hash(domainSeparator)));
-        return safe.signedMessages(messageHash) != 0;
+    /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
+    function onlySignedAndNotCancelled(
+        Data memory self,
+        GnosisSafe safe,
+        bytes32 settlementDomainSeparator
+    ) internal view {
+        abi.encode(self).onlySignedAndNotCancelled(
+            safe,
+            settlementDomainSeparator
+        );
     }
 
     function _kindOfOrder(Data memory self) internal pure returns (bytes32) {
