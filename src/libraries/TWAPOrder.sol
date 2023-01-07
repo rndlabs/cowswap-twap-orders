@@ -3,13 +3,16 @@ pragma solidity ^0.8.17;
 
 // TODO: Analyse gas usage of assembly vs. abi.encodePacked in hash()
 
+import "../vendored/interfaces/ConditionalOrder.sol";
 import {IERC20} from "../vendored/interfaces/IERC20.sol";
 import {GPv2Order} from "../vendored/libraries/GPv2Order.sol";
 import {SafeCast} from "../vendored/libraries/SafeCast.sol";
-import {ConditionalOrder} from "../vendored/interfaces/ConditionalOrder.sol";
+import {GnosisSafe} from "safe/GnosisSafe.sol";
+import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 library TWAPOrder {
     using SafeCast for uint256;
+    using SafeSigUtils for GnosisSafe;
 
     // --- structs
 
@@ -31,68 +34,29 @@ library TWAPOrder {
     /// @dev keccak256("conditionalorder.twap")
     bytes32 private constant APP_DATA = bytes32(0x6a1cb2f57824a1985d4bd2c556f30a048157ee9973efc0a4714604dde0a23104);
 
-    /// @dev The TWAP order EIP-712 type hash for the [`TWAPOrder.Data`] struct.
-    ///
-    /// This value is pre-computed from the following expression:
-    /// ```
-    /// keccak256(
-    ///     "TWAPOrder(" +
-    ///         "address token0," +
-    ///         "address token1," +
-    ///         "address receiver," +
-    ///         "uint256 amount," +
-    ///         "uint256 lim," +
-    ///         "uint256 flags," +
-    ///         "uint256 t0," +
-    ///         "uint256 n," +
-    ///         "uint256 t," +
-    ///         "uint256 span" +
-    ///     ")"
-    /// )
-    /// ```
-    bytes32 internal constant TYPE_HASH =
-        hex"78fc9e465c33c597d776c177cd9386d1508274d75e36c7e1ae74c0e70518ffd1";
-
     // --- functions
 
-    /// @dev Return the EIP-712 signing hash for the specified order.
-    ///      Assembly below modified from vendored `GPv2Order.sol`.
-    /// @param self The TWAP order to compute the EIP-712 signing hash for.
+    /// @dev Return the EIP-712 `structHash` for the specified order.
+    /// @param self The TWAP order to `structHash` for.
     /// @param domainSeparator The EIP-712 domain separator to use.
-    /// @return twapDigest The 32 byte EIP-712 struct hash.
+    /// @return twapDigest The TWAP `structHash` for signing.
     function hash(Data memory self, bytes32 domainSeparator) 
         internal
         pure
         returns (bytes32 twapDigest)
     {
-        bytes32 structHash;
-
-        // NOTE: Compute the EIP-712 order struct hash in place. As suggested
-        // in the EIP proposal, noting that the order struct has 10 fields, and
-        // prefixing the type hash `(1 + 10) * 32 = 352` bytes to hash.
-        // <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md#rationale-for-encodedata>
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            let dataStart := sub(self, 32)
-            let temp := mload(dataStart)
-            mstore(dataStart, TYPE_HASH)
-            structHash := keccak256(dataStart, 352)
-            mstore(dataStart, temp)
-        }
-
-        // NOTE: Now that we have the struct hash, compute the EIP-712 signing
-        // hash using scratch memory past the free memory pointer. The signing
-        // hash is computed from `"\x19\x01" || domainSeparator || structHash`.
-        // <https://docs.soliditylang.org/en/v0.7.6/internals/layout_in_memory.html#layout-in-memory>
-        // <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md#specification>
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            let freeMemoryPointer := mload(0x40)
-            mstore(freeMemoryPointer, "\x19\x01")
-            mstore(add(freeMemoryPointer, 2), domainSeparator)
-            mstore(add(freeMemoryPointer, 34), structHash)
-            twapDigest := keccak256(freeMemoryPointer, 66)
-        }
+        return keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                domainSeparator,
+                keccak256(
+                    abi.encode(
+                        CONDITIONAL_ORDER_TYPE_HASH,
+                        keccak256(abi.encode(self))
+                    )
+                )
+            )
+        );
     }
 
     function _kindOfOrder(Data memory self) private pure returns (bytes32) {
