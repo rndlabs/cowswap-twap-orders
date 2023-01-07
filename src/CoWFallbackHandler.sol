@@ -51,8 +51,8 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
 
     /// @dev An internal function that is overriden by the child contract when implementing
     /// the smart order logic.
-    /// @param _hash The hash of the data to be verified.
-    /// @param _signature The signature of the data to be verified.
+    /// @param _hash The EIP-712 structHash of the GPv2Order.
+    /// @param _signature Any arbitrary data passed in to validate the order.
     /// @return A boolean indicating whether the signature is valid.
     function verifyOrder(bytes32 _hash, bytes memory _signature)
         internal
