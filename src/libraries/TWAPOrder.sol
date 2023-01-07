@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 // TODO: Analyse gas usage of assembly vs. abi.encodePacked in hash()
 
-import "../vendored/interfaces/ConditionalOrder.sol";
+import "../interfaces/ConditionalOrder.sol";
 import {IERC20} from "../vendored/interfaces/IERC20.sol";
 import {GPv2Order} from "../vendored/libraries/GPv2Order.sol";
 import {SafeCast} from "../vendored/libraries/SafeCast.sol";
