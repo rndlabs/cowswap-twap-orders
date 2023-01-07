@@ -13,6 +13,7 @@ import {SafeSigUtils} from "./SafeSigUtils.sol";
 library TWAPOrder {
     using SafeCast for uint256;
     using SafeSigUtils for GnosisSafe;
+    using TWAPOrder for TWAPOrder.Data;
 
     // --- structs
 
@@ -59,7 +60,16 @@ library TWAPOrder {
         );
     }
 
-    function _kindOfOrder(Data memory self) private pure returns (bytes32) {
+    /// @dev Determine if the order has been signed
+    /// @param self The TWAP order to `structHash` for.
+    /// @param safe The Gnosis Safe to check for a signature.
+    /// @param domainSeparator The EIP-712 domain separator (of the settlement contract) to use.
+    function isSigned(Data memory self, GnosisSafe safe, bytes32 domainSeparator) internal view returns (bool) {
+        bytes32 messageHash = safe.getMessageHash(abi.encode(self.hash(domainSeparator)));
+        return safe.signedMessages(messageHash) != 0;
+    }
+
+    function _kindOfOrder(Data memory self) internal pure returns (bytes32) {
         if (self.flags == 0)  {
             return GPv2Order.KIND_SELL;
         }
