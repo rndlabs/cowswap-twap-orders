@@ -7,6 +7,8 @@ import "../libraries/GPv2Order.sol";
 
 /* solhint-disable max-line-length */
 interface ConditionalOrder {
+    error OrderNotValid();
+
     /// @dev This event is emitted by the Safe when a conditional order is created.
     /// The `address` parameter is the address of the Safe that implements the `getTradeableOrder` function
     /// The `bytes` parameter is the encoded order that is passed to the CoW Protocol API
