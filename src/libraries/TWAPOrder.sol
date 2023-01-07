@@ -49,12 +49,13 @@ library TWAPOrder {
     /// @param self The TWAP bundle struct to `structHash`.
     /// @param safe The Gnosis Safe to check for a signature.
     /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
+    /// @return twapDigest The TWAP bundle's `structHash`.
     function onlySignedAndNotCancelled(
         Data memory self,
         GnosisSafe safe,
         bytes32 settlementDomainSeparator
-    ) internal view {
-        abi.encode(self).onlySignedAndNotCancelled(
+    ) internal view returns (bytes32) {
+        return abi.encode(self).onlySignedAndNotCancelled(
             safe,
             settlementDomainSeparator
         );

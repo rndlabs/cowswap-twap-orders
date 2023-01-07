@@ -64,11 +64,12 @@ library ConditionalOrderLib {
     /// @param payload The ABI encoded implementation agnostic payload to `structHash` for.
     /// @param safe The Gnosis Safe to check for a signature.
     /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
+    /// @return conditionalOrderHashStruct The `structHash` of the conditional order.
     function onlySignedAndNotCancelled(
         bytes memory payload,
         GnosisSafe safe,
         bytes32 settlementDomainSeparator
-    ) internal view {
+    ) internal view returns (bytes32) {
         bytes32 conditionalOrderHashStruct = hash(payload, settlementDomainSeparator);
         bytes32 safeDomainSeparator = safe.domainSeparator();
 
@@ -87,5 +88,7 @@ library ConditionalOrderLib {
         if (SafeSigUtils.isSigned(cancelMessageHash, safe)) {
             revert ConditionalOrder.OrderCancelled();
         }
+
+        return conditionalOrderHashStruct;
     }
 }
