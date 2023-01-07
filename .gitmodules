@@ -8,4 +8,4 @@
 [submodule "lib/safe"]
 	path = lib/safe
 	url = https://github.com/safe-global/safe-contracts
-	branch = v1.3.0
+	branch = v1.3.0-libs.0
