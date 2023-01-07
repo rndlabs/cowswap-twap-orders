@@ -3,10 +3,11 @@ pragma solidity >=0.7.0 <0.9.0;
 
 /* solhint-disable max-line-length */
 // TODO: Add vendoring notes (ie. virtual / public on `isValidSignature`)
+//       Imports from GnosisSafe only import GnosisSafe
 
 import "safe/handler/DefaultCallbackHandler.sol";
-import "safe/interfaces/ISignatureValidator.sol";
-import "safe/GnosisSafe.sol";
+import "./ISignatureValidator.sol";
+import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 /// @title Compatibility Fallback Handler - fallback handler to provider compatibility between pre 1.3.0 and 1.3.0+ Safe contracts
 /// @author Richard Meissner - <richard@gnosis.pm>

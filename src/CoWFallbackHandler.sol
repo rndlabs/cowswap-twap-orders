@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import {ConditionalOrder} from "./vendored/interfaces/ConditionalOrder.sol";
-import {CompatibilityFallbackHandler} from "./vendored/SafeCompatibilityFallbackHandler.sol";
+import {CompatibilityFallbackHandler} from "./vendored/safe/CompatibilityFallbackHandler.sol";
 
 /// @title CoW Fallback Handler
 /// @author mfw78 <mfw78@rndlabs.xyz>
