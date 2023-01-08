@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+// TODO: Write additional notes on vendoring, adding in encode flags, etc.
+
 /* solhint-disable max-line-length */
 // Vendored with minor modifications:
 // - import paths
@@ -19,6 +21,24 @@ import {GPv2Order} from "./GPv2Order.sol";
 library GPv2Trade {
     using GPv2Order for GPv2Order.Data;
     using GPv2Order for bytes;
+
+    // uint256 constant FLAG_ORDER_KIND_SELL = 0x00;
+    uint256 constant FLAG_ORDER_KIND_BUY = 0x01;
+    
+    // uint256 constant FLAG_FILL_FOK = 0x00;
+    uint256 constant FLAG_FILL_PARTIAL = 0x02;
+
+    // uint256 constant FLAG_SELL_TOKEN_ERC20_TOKEN_BALANCE = 0x00;
+    uint256 constant FLAG_SELL_TOKEN_BALANCER_EXTERNAL = 0x08;
+    uint256 constant FLAG_SELL_TOKEN_BALANCER_INTERNAL = 0x0c;
+
+    // uint256 constant FLAG_BUY_TOKEN_ERC20_TOKEN_BALANCE = 0x00;
+    uint256 constant FLAG_BUY_TOKEN_BALANCER_INTERNAL = 0x10;
+
+    // uint256 constant FLAG_SIGNATURE_SCHEME_EIP712 = 0x00;
+    uint256 constant FLAG_SIGNATURE_SCHEME_ETHSIGN = 0x20;
+    uint256 constant FLAG_SIGNATURE_SCHEME_EIP1271 = 0x40;
+    uint256 constant FLAG_SIGNATURE_SCHEME_PRESIGN = 0x60;
 
     /// @dev A struct representing a trade to be executed as part a batch
     /// settlement.
@@ -135,5 +155,43 @@ library GPv2Trade {
         // following expression does not produce a valid enum value. This means
         // we check here that the leading reserved bits must be 0.
         signingScheme = GPv2Signing.Scheme(flags >> 5);
+    }
+
+    function encodeFlags(
+        GPv2Order.Data memory order,
+        GPv2Signing.Scheme signingScheme
+    ) internal pure returns (uint256 flags) {
+        // set the zero index bit if the order is a buy order
+        if (order.kind == GPv2Order.KIND_BUY) {
+            flags |= FLAG_ORDER_KIND_BUY;
+        }
+
+        // set the first index bit if the order is partially fillable
+        if (order.partiallyFillable) {
+            flags |= FLAG_FILL_PARTIAL;
+        }
+
+        // set the second and third index bit based on the sell token liquidity
+        if (order.sellTokenBalance == GPv2Order.BALANCE_EXTERNAL) {
+            flags |= FLAG_SELL_TOKEN_BALANCER_EXTERNAL;
+        } else if (order.sellTokenBalance == GPv2Order.BALANCE_INTERNAL) {
+            flags |= FLAG_SELL_TOKEN_BALANCER_INTERNAL;
+        }
+
+        // set the fourth index bit based on the buy token liquidity
+        if (order.buyTokenBalance == GPv2Order.BALANCE_INTERNAL) {
+            flags |= FLAG_BUY_TOKEN_BALANCER_INTERNAL;
+        }
+
+        // set the fifth and sixth index bit based on the signature scheme
+        if (signingScheme == GPv2Signing.Scheme.EthSign) {
+            flags |= FLAG_SIGNATURE_SCHEME_ETHSIGN;
+        } else if (signingScheme == GPv2Signing.Scheme.Eip1271) {
+            flags |= FLAG_SIGNATURE_SCHEME_EIP1271;
+        } else if (signingScheme == GPv2Signing.Scheme.PreSign) {
+            flags |= FLAG_SIGNATURE_SCHEME_PRESIGN;
+        }
+
+        return flags;
     }
 }
