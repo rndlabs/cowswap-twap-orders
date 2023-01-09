@@ -37,19 +37,19 @@ library TWAPOrder {
 
     // --- functions
 
-    /// @dev Hash the TWAP bundle IAW EIP-712.
-    /// @param self The TWAP bundle to get the `structHash` for.
-    /// @param domainSeparator The EIP-712 domain separator to use.
-    /// @return twapDigest The TWAP bundle's `structHash` for signing.
+    /// @dev Get the EIP-712 TypedData hash.
+    /// @param self The TWAP bundle.
+    /// @param domainSeparator The domain separator to use.
+    /// @return twapDigest The TWAP bundle's TypedData hash for signing.
     function hash(Data memory self, bytes32 domainSeparator) internal pure returns (bytes32) {
         return abi.encode(self).hash(domainSeparator);
     }
 
     /// @dev Determine if the TWAP bundle has been signed and not cancelled
-    /// @param self The TWAP bundle struct to `structHash`.
+    /// @param self The TWAP bundle to check.
     /// @param safe The Gnosis Safe to check for a signature.
     /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
-    /// @return twapDigest The TWAP bundle's `structHash`.
+    /// @return twapDigest The TWAP bundle's TypedData hash.
     function onlySignedAndNotCancelled(
         Data memory self,
         GnosisSafe safe,

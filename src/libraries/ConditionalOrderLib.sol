@@ -14,10 +14,10 @@ import {SafeSigUtils} from "./SafeSigUtils.sol";
 library ConditionalOrderLib {
     using SafeSigUtils for bytes;
 
-    /// @dev Return the EIP-712 `structHash` for signing.
+    /// @dev Get the EIP-712 TypedData hash for an order.
     /// @param payload The implementation specific conditional order to `structHash`.
     /// @param domainSeparator The settlement contract's EIP-712 domain separator to use.
-    /// @return digest The ConditionalOrder `structHash` for signing by an EOA or EIP-1271 wallet.
+    /// @return digest The ConditionalOrder's TypedData hash for signing by an EOA or EIP-1271 wallet.
     function hash(bytes memory payload, bytes32 domainSeparator) 
         internal
         pure
@@ -37,10 +37,10 @@ library ConditionalOrderLib {
         );
     }
 
-    /// @dev Return the EIP-712 `structHash` for cancelling.
+    /// @dev Get the EIP-712 TypedData hash for an order.
     /// @param order The implementation specific conditional order to `structHash`.
     /// @param domainSeparator The settlement contract's EIP-712 domain separator to use.
-    /// @return digest The ConditionalOrder `structHash` for cancelling by an EOA or EIP-1271 wallet.
+    /// @return digest The ConditionalOrder's TypeData hash for cancelling by an EOA or EIP-1271 wallet.
     function hashCancel(bytes32 order, bytes32 domainSeparator)
         internal
         pure
@@ -64,7 +64,7 @@ library ConditionalOrderLib {
     /// @param payload The ABI encoded implementation agnostic payload to `structHash` for.
     /// @param safe The Gnosis Safe to check for a signature.
     /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
-    /// @return conditionalOrderHashStruct The `structHash` of the conditional order.
+    /// @return conditionalOrderHashStruct The TypedData has of the conditional order.
     function onlySignedAndNotCancelled(
         bytes memory payload,
         GnosisSafe safe,
