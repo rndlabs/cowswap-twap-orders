@@ -16,3 +16,6 @@
 	path = lib/@openzeppelin
 	url = https://github.com/openzeppelin/openzeppelin-contracts
 	branch = v4.8.0
+[submodule "lib/balancer"]
+	path = lib/balancer
+	url = https://github.com/rndlabs/balancer
