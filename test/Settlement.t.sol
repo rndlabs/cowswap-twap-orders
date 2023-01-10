@@ -135,7 +135,7 @@ contract CoWProtocolSettlement is Base {
         ];
 
         // finally, we can execute the settlement
-        vm.prank(solver);
+        vm.prank(solver.addr);
         settlement.settle(tokens, clearingPrices, trades, interactions);
     }
 }

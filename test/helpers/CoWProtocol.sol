@@ -10,9 +10,13 @@ import {IVault as GPv2IVault} from "../../src/vendored/interfaces/IVault.sol";
 import {GPv2Settlement} from "../../src/vendored/GPv2Settlement.sol";
 import {GPv2AllowListAuthentication} from "../../src/vendored/GPv2AllowListAuthentication.sol";
 
+import "../libraries/TestAccountLib.sol";
+
 /// @title CoWProtocol - A helper contract for local integration testing with CoW Protocol.
 /// @author mfw78 <mfw78@rndlabs.xyz>
 abstract contract CoWProtocol is Test {
+    using TestAccountLib for TestAccount;
+
     // --- constants
     uint256 constant PAUSE_WINDOW_DURATION = 7776000;
     uint256 constant BUFFER_PERIOD_DURATION = 2592000;
@@ -24,10 +28,8 @@ abstract contract CoWProtocol is Test {
     GPv2Settlement public settlement;
 
     // --- accounts
-    address public admin;
-    uint256 internal adminKey;
-    address public solver;
-    uint256 internal solverKey;
+    TestAccount admin;
+    TestAccount solver;
 
     address public relayer;
 
@@ -37,10 +39,10 @@ abstract contract CoWProtocol is Test {
 
     function setUp() public virtual {
         // setup test accounts
-        (admin, adminKey) = makeAddrAndKey("admin");
-        (solver, solverKey) = makeAddrAndKey("solver");
+        admin = TestAccountLib.createTestAccount("admin");
+        solver = TestAccountLib.createTestAccount("solver");
 
-        authorizer = new Authorizer(admin);
+        authorizer = new Authorizer(admin.addr);
 
         // deploy the Balancer vault
         // parameters taken from mainnet initialization:
@@ -61,7 +63,7 @@ abstract contract CoWProtocol is Test {
 
         // deploy the allow list manager
         GPv2AllowListAuthentication allowList = new GPv2AllowListAuthentication();
-        allowList.initializeManager(admin);
+        allowList.initializeManager(admin.addr);
 
         settlement = new GPv2Settlement(
             allowList,
@@ -71,7 +73,7 @@ abstract contract CoWProtocol is Test {
         relayer = address(settlement.vaultRelayer());
 
         // authorize the solver
-        vm.prank(admin);
-        allowList.addSolver(solver);
+        vm.prank(admin.addr);
+        allowList.addSolver(solver.addr);
     }
 }
