@@ -9,3 +9,6 @@
 	path = lib/safe
 	url = https://github.com/safe-global/safe-contracts
 	branch = v1.3.0-libs.0
+[submodule "lib/canonical-weth"]
+	path = lib/canonical-weth
+	url = https://github.com/rndlabs/canonical-weth
