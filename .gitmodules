@@ -12,3 +12,7 @@
 [submodule "lib/canonical-weth"]
 	path = lib/canonical-weth
 	url = https://github.com/rndlabs/canonical-weth
+[submodule "lib/@openzeppelin"]
+	path = lib/@openzeppelin
+	url = https://github.com/openzeppelin/openzeppelin-contracts
+	branch = v4.8.0
