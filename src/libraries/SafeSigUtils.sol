@@ -24,7 +24,7 @@ library SafeSigUtils {
     /// @param hash Message hash that should be signed.
     /// @param safe Safe that should have signed the message.
     function isSigned(bytes32 hash, GnosisSafe safe) internal view returns (bool) {
-        return safe.signedMessages(hash) == 0;
+        return safe.signedMessages(hash) != 0;
     }
 
 }
