@@ -8,9 +8,14 @@ import {CompatibilityFallbackHandler} from "../../lib/safe/contracts/handler/Com
 import {MultiSend} from "../../lib/safe/contracts/libraries/MultiSend.sol";
 import {SignMessageLib} from "../../lib/safe/contracts/libraries/SignMessageLib.sol";
 
+import "../libraries/TestAccountLib.sol";
+
 /// @title Safe - A helper contract for local integration testing with Gnosis Safe.
 /// @author mfw78 <mfw78@rndlabs.xyz>
 abstract contract Safe {
+    using TestAccountLib for TestAccount[];
+    using TestAccountLib for TestAccount;
+
     GnosisSafe public singleton;
     GnosisSafeProxyFactory public factory;
     CompatibilityFallbackHandler private handler;

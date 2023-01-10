@@ -11,6 +11,7 @@ import {GPv2Signing} from "../src/vendored/mixins/GPv2Signing.sol";
 
 import "./libraries/GPv2SigUtils.sol";
 import "../src/CoWTWAPFallbackHandler.sol";
+import "./libraries/TestAccountLib.sol";
 
 import {Base} from "./Base.t.sol";
 
@@ -18,6 +19,7 @@ contract CoWProtocolSettlement is Base {
     using GPv2Order for GPv2Order.Data;
     using GPv2Trade for GPv2Order.Data;
     using GPv2SigUtils for GPv2Order.Data;
+    using TestAccountLib for TestAccount;
 
     function testSettlement() public {
         // Let's initially make it easy. We have a single batch with two trades.
@@ -25,9 +27,9 @@ contract CoWProtocolSettlement is Base {
         // Bob wants to buy 100 T0 for 100 T1.
 
         // first we need to approve the vault relayer to spend our tokens
-        vm.prank(alice);
+        vm.prank(alice.addr);
         token0.approve(relayer, 100e18);
-        vm.prank(bob);
+        vm.prank(bob.addr);
         token1.approve(relayer, 100e18);
 
         // now we can create the orders
@@ -69,19 +71,13 @@ contract CoWProtocolSettlement is Base {
 
         {
             // now we can sign the orders
-            (uint8 aliceV, bytes32 aliceR, bytes32 aliceS) = vm.sign(
-                aliceKey,
+            aliceSignature = alice.signPacked(
                 aliceOrder.getTypedDataHash(settlement.domainSeparator())
             );
 
-            aliceSignature = tightlyPackSignature(aliceR, aliceS, aliceV);
-
-            (uint8 bobV, bytes32 bobR, bytes32 bobS) = vm.sign(
-                bobKey,
+            bobSignature = bob.signPacked(
                 bobOrder.getTypedDataHash(settlement.domainSeparator())
             );
-
-            bobSignature = tightlyPackSignature(bobR, bobS, bobV);
         }
 
         // first declare the tokens we will be trading
