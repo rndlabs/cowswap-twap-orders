@@ -9,7 +9,6 @@ import {GPv2Trade} from "../src/vendored/libraries/GPv2Trade.sol";
 import {GPv2Interaction} from "../src/vendored/libraries/GPv2Interaction.sol";
 import {GPv2Signing} from "../src/vendored/mixins/GPv2Signing.sol";
 
-import "./libraries/GPv2SigUtils.sol";
 import "../src/CoWTWAPFallbackHandler.sol";
 import "./libraries/TestAccountLib.sol";
 
@@ -18,7 +17,6 @@ import {Base} from "./Base.t.sol";
 contract CoWProtocolSettlement is Base {
     using GPv2Order for GPv2Order.Data;
     using GPv2Trade for GPv2Order.Data;
-    using GPv2SigUtils for GPv2Order.Data;
     using TestAccountLib for TestAccount;
 
     function testSettlement() public {
@@ -72,11 +70,11 @@ contract CoWProtocolSettlement is Base {
         {
             // now we can sign the orders
             aliceSignature = alice.signPacked(
-                aliceOrder.getTypedDataHash(settlement.domainSeparator())
+                aliceOrder.hash(settlement.domainSeparator())
             );
 
             bobSignature = bob.signPacked(
-                bobOrder.getTypedDataHash(settlement.domainSeparator())
+                bobOrder.hash(settlement.domainSeparator())
             );
         }
 
