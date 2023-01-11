@@ -19,3 +19,6 @@
 [submodule "lib/balancer"]
 	path = lib/balancer
 	url = https://github.com/rndlabs/balancer
+[submodule "lib/cowprotocol"]
+	path = lib/cowprotocol
+	url = https://github.com/rndlabs/cowswap-contracts
