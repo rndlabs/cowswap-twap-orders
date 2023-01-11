@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import {GnosisSafe} from "../lib/safe/contracts/GnosisSafe.sol";
-import {Enum} from "../lib/safe/contracts/common/Enum.sol";
+import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
+
+import {IERC165} from "safe/interfaces/IERC165.sol";
+import {ERC721TokenReceiver} from "safe/interfaces/ERC721TokenReceiver.sol";
+import {ERC777TokensRecipient} from "safe/interfaces/ERC777TokensRecipient.sol";
+import {ERC1155TokenReceiver} from "safe/interfaces/ERC1155TokenReceiver.sol";
+import {GnosisSafe} from "safe/GnosisSafe.sol";
+import {Enum} from "safe/common/Enum.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import "./Base.t.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 import "./libraries/TestAccountLib.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
-import {IERC20} from "../src/vendored/interfaces/IERC20.sol";
-import {GPv2Order} from "../src/vendored/libraries/GPv2Order.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
-
-import {IERC165} from "../lib/safe/contracts/interfaces/IERC165.sol";
-import {ERC721TokenReceiver} from "../lib/safe/contracts/interfaces/ERC721TokenReceiver.sol";
-import {ERC777TokensRecipient} from "../lib/safe/contracts/interfaces/ERC777TokensRecipient.sol";
-import {ERC1155TokenReceiver} from "../lib/safe/contracts/interfaces/ERC1155TokenReceiver.sol";
 
 contract CoWTWAP is Base {
     using TestAccountLib for TestAccount[];

@@ -3,12 +3,13 @@ pragma solidity ^0.8.17;
 
 // TODO: Analyse gas usage of assembly vs. abi.encodePacked in hash()
 
+import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
+import {SafeCast} from "@openzeppelin/utils/math/SafeCast.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
+import {GnosisSafe} from "safe/GnosisSafe.sol";
+
 import "../interfaces/ConditionalOrder.sol";
 import "../libraries/ConditionalOrderLib.sol";
-import {IERC20} from "../vendored/interfaces/IERC20.sol";
-import {GPv2Order} from "../vendored/libraries/GPv2Order.sol";
-import {SafeCast} from "../vendored/libraries/SafeCast.sol";
-import {GnosisSafe} from "safe/GnosisSafe.sol";
 import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 library TWAPOrder {

@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import "solmate/tokens/ERC20.sol";
-import {IERC20} from "../../src/vendored/interfaces/IERC20.sol";
-
-uint8 constant DECIMALS = 18;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @title Mock ERC20 token for testing.
 /// @author mfw78 <mfw78@rndlabs.xyz>
@@ -13,7 +10,7 @@ contract MockERC20 is ERC20 {
     /// of `vm.deal` in tests.
     /// @param name The name of the token.
     /// @param symbol The symbol of the token.
-    constructor(string memory name, string memory symbol) ERC20(name, symbol, DECIMALS) {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 }
 
 /// @title Tokens - A helper contract for local integration testing.

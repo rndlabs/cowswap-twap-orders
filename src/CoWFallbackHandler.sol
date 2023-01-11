@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import {CompatibilityFallbackHandler} from "./vendored/safe/CompatibilityFallbackHandler.sol";
-import {GPv2Settlement} from "./vendored/GPv2Settlement.sol";
+import {CompatibilityFallbackHandler} from "./vendored/CompatibilityFallbackHandler.sol";
+import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 
 import {ConditionalOrder} from "./interfaces/ConditionalOrder.sol";
 

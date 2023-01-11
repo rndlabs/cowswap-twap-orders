@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import {Enum} from "../../lib/safe/contracts/common/Enum.sol";
-import {GnosisSafe} from "../../lib/safe/contracts/GnosisSafe.sol";
-import {GnosisSafeProxy} from "../../lib/safe/contracts/proxies/GnosisSafeProxy.sol";
-import {GnosisSafeProxyFactory} from "../../lib/safe/contracts/proxies/GnosisSafeProxyFactory.sol";
-import {CompatibilityFallbackHandler} from "../../lib/safe/contracts/handler/CompatibilityFallbackHandler.sol";
-import {MultiSend} from "../../lib/safe/contracts/libraries/MultiSend.sol";
-import {SignMessageLib} from "../../lib/safe/contracts/libraries/SignMessageLib.sol";
+import {Enum} from "safe/common/Enum.sol";
+import {GnosisSafe} from "safe/GnosisSafe.sol";
+import {GnosisSafeProxy} from "safe/proxies/GnosisSafeProxy.sol";
+import {GnosisSafeProxyFactory} from "safe/proxies/GnosisSafeProxyFactory.sol";
+import {CompatibilityFallbackHandler} from "safe/handler/CompatibilityFallbackHandler.sol";
+import {MultiSend} from "safe/libraries/MultiSend.sol";
+import {SignMessageLib} from "safe/libraries/SignMessageLib.sol";
 
 import "../libraries/TestAccountLib.sol";
 

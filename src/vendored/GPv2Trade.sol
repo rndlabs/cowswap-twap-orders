@@ -12,9 +12,9 @@
 
 pragma solidity >=0.8.0 <0.9.0;
 
-import {IERC20} from "../interfaces/IERC20.sol";
-import {GPv2Signing} from "../mixins/GPv2Signing.sol";
-import {GPv2Order} from "./GPv2Order.sol";
+import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
+import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 /// @title Gnosis Protocol v2 Trade Library.
 /// @author Gnosis Developers

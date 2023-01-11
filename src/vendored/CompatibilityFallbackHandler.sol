@@ -6,8 +6,8 @@ pragma solidity >=0.7.0 <0.9.0;
 //       Imports from GnosisSafe only import GnosisSafe
 
 import "safe/handler/DefaultCallbackHandler.sol";
-import "./ISignatureValidator.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
+import "./ISignatureValidator.sol";
 
 /// @title Compatibility Fallback Handler - fallback handler to provider compatibility between pre 1.3.0 and 1.3.0+ Safe contracts
 /// @author Richard Meissner - <richard@gnosis.pm>

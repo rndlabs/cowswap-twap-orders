@@ -3,11 +3,14 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 
-import {IERC20} from "../src/vendored/interfaces/IERC20.sol";
-import {GPv2Order} from "../src/vendored/libraries/GPv2Order.sol";
-import {GPv2Trade} from "../src/vendored/libraries/GPv2Trade.sol";
-import {GPv2Interaction} from "../src/vendored/libraries/GPv2Interaction.sol";
-import {GPv2Signing} from "../src/vendored/mixins/GPv2Signing.sol";
+import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
+
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
+import {GPv2Interaction} from "cowprotocol/libraries/GPv2Interaction.sol";
+import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
+import {GPv2Trade} from "cowprotocol/libraries/GPv2Trade.sol";
+
+import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
 
 import "../src/CoWTWAPFallbackHandler.sol";
 import "./libraries/TestAccountLib.sol";
@@ -16,7 +19,7 @@ import {Base} from "./Base.t.sol";
 
 contract CoWProtocolSettlement is Base {
     using GPv2Order for GPv2Order.Data;
-    using GPv2Trade for GPv2Order.Data;
+    using GPv2TradeEncoder for GPv2Order.Data;
     using TestAccountLib for TestAccount;
 
     function testSettlement() public {
@@ -92,7 +95,7 @@ contract CoWProtocolSettlement is Base {
         GPv2Trade.Data[] memory trades = new GPv2Trade.Data[](2);
 
         // Alice's trade
-        uint256 aliceFlags = GPv2Trade.encodeFlags(aliceOrder, GPv2Signing.Scheme.Eip712);
+        uint256 aliceFlags = GPv2TradeEncoder.encodeFlags(aliceOrder, GPv2Signing.Scheme.Eip712);
         console.log("aliceFlags: %s", aliceFlags);
         trades[0] = GPv2Trade.Data({
             sellTokenIndex: 0,
@@ -109,7 +112,7 @@ contract CoWProtocolSettlement is Base {
         });
 
         // Bob's trade
-        uint256 bobFlags = GPv2Trade.encodeFlags(bobOrder, GPv2Signing.Scheme.Eip712);
+        uint256 bobFlags = GPv2TradeEncoder.encodeFlags(bobOrder, GPv2Signing.Scheme.Eip712);
         console.log("bobFlags: %s", bobFlags);
         trades[1] = GPv2Trade.Data({
             sellTokenIndex: 1,

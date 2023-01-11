@@ -2,13 +2,13 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
+import "canonical-weth/WETH9.sol";
+import {IAuthorizer, Authorizer} from "balancer/vault/Authorizer.sol";
+import {Vault} from "balancer/vault/Vault.sol";
 
-import "../vendored/WETH9.sol";
-import {IAuthorizer, Authorizer} from "../vendored/balancer/vault/Authorizer.sol";
-import {Vault} from "../vendored/balancer/vault/Vault.sol";
-import {IVault as GPv2IVault} from "../../src/vendored/interfaces/IVault.sol";
-import {GPv2Settlement} from "../../src/vendored/GPv2Settlement.sol";
-import {GPv2AllowListAuthentication} from "../../src/vendored/GPv2AllowListAuthentication.sol";
+import {IVault as GPv2IVault} from "cowprotocol/interfaces/IVault.sol";
+import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
+import {GPv2AllowListAuthentication} from "cowprotocol/GPv2AllowListAuthentication.sol";
 
 import "../libraries/TestAccountLib.sol";
 

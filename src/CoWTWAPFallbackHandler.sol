@@ -3,8 +3,8 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import {TWAPOrder} from "./libraries/TWAPOrder.sol";
 import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
-import {GPv2Order} from "./vendored/libraries/GPv2Order.sol";
-import {GPv2Settlement} from "./vendored/GPv2Settlement.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
+import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 /// @title CoW TWAP Fallback Handler
