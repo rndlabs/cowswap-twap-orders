@@ -2,7 +2,9 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
-import "canonical-weth/WETH9.sol";
+
+import {IWETH, WETH9} from "canonical-weth/WETH9.sol";
+
 import {IAuthorizer, Authorizer} from "balancer/vault/Authorizer.sol";
 import {Vault} from "balancer/vault/Vault.sol";
 
@@ -10,7 +12,7 @@ import {IVault as GPv2IVault} from "cowprotocol/interfaces/IVault.sol";
 import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 import {GPv2AllowListAuthentication} from "cowprotocol/GPv2AllowListAuthentication.sol";
 
-import "../libraries/TestAccountLib.sol";
+import {TestAccount, TestAccountLib} from "../libraries/TestAccountLib.sol";
 
 /// @title CoWProtocol - A helper contract for local integration testing with CoW Protocol.
 /// @author mfw78 <mfw78@rndlabs.xyz>

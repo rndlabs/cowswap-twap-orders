@@ -3,7 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 // TODO: vendoring notes about bytes parameters
 
-import "cowprotocol/libraries/GPv2Order.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 /// @dev The conditional order EIP-712 `typeHash` for creating an order.
 ///

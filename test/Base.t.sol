@@ -3,8 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 
-import "./libraries/TestAccountLib.sol";
-
+import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.sol";
 import {Tokens} from "./helpers/Tokens.sol";
 import {CoWProtocol} from "./helpers/CoWProtocol.sol";
 import {Safe} from "./helpers/Safe.sol";

@@ -9,14 +9,14 @@ import {ERC777TokensRecipient} from "safe/interfaces/ERC777TokensRecipient.sol";
 import {ERC1155TokenReceiver} from "safe/interfaces/ERC1155TokenReceiver.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 import {Enum} from "safe/common/Enum.sol";
-import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
-import "./Base.t.sol";
-import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
-import "./libraries/TestAccountLib.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
+import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
+
+import "./Base.t.sol";
 
 contract CoWTWAP is Base {
     using TestAccountLib for TestAccount[];

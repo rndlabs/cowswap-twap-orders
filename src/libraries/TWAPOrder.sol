@@ -5,11 +5,13 @@ pragma solidity ^0.8.17;
 
 import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
 import {SafeCast} from "@openzeppelin/utils/math/SafeCast.sol";
+
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
+
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
-import "../interfaces/ConditionalOrder.sol";
-import "../libraries/ConditionalOrderLib.sol";
+import {ConditionalOrder} from "../interfaces/ConditionalOrder.sol";
+import {ConditionalOrderLib} from "../libraries/ConditionalOrderLib.sol";
 import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 library TWAPOrder {

@@ -9,7 +9,7 @@ import {CompatibilityFallbackHandler} from "safe/handler/CompatibilityFallbackHa
 import {MultiSend} from "safe/libraries/MultiSend.sol";
 import {SignMessageLib} from "safe/libraries/SignMessageLib.sol";
 
-import "../libraries/TestAccountLib.sol";
+import {TestAccount, TestAccountLib} from "../libraries/TestAccountLib.sol";
 
 /// @title Safe - A helper contract for local integration testing with Gnosis Safe.
 /// @author mfw78 <mfw78@rndlabs.xyz>

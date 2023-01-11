@@ -11,11 +11,9 @@ import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
 import {GPv2Trade} from "cowprotocol/libraries/GPv2Trade.sol";
 
 import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
+import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
-import "../src/CoWTWAPFallbackHandler.sol";
-import "./libraries/TestAccountLib.sol";
-
-import {Base} from "./Base.t.sol";
+import "./Base.t.sol";
 
 contract CoWProtocolSettlement is Base {
     using GPv2Order for GPv2Order.Data;

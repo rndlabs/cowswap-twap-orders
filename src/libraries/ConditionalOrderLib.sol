@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
+import {GnosisSafe} from "safe/GnosisSafe.sol";
+
 import {
     CONDITIONAL_ORDER_TYPE_HASH,
     CANCEL_ORDER_TYPE_HASH,
     ConditionalOrder
 } from "../interfaces/ConditionalOrder.sol";
-import {GnosisSafe} from "safe/GnosisSafe.sol";
 import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 /// @title Conditional Order Library
