@@ -13,7 +13,6 @@ import {ConditionalOrderLib} from "../libraries/ConditionalOrderLib.sol";
 
 library TWAPOrder {
     using SafeCast for uint256;
-    using ConditionalOrderLib for bytes;
 
     // --- structs
 
@@ -39,14 +38,6 @@ library TWAPOrder {
     bytes32 private constant APP_DATA = bytes32(0x6a1cb2f57824a1985d4bd2c556f30a048157ee9973efc0a4714604dde0a23104);
 
     // --- functions
-
-    /// @dev Get the EIP-712 TypedData hash.
-    /// @param self The TWAP bundle.
-    /// @param domainSeparator The domain separator to use.
-    /// @return twapDigest The TWAP bundle's TypedData hash for signing.
-    function hash(Data memory self, bytes32 domainSeparator) internal pure returns (bytes32) {
-        return abi.encode(self).hash(domainSeparator);
-    }
 
     function _kindOfOrder(Data memory self) internal pure returns (bytes32) {
         if (self.flags == 0)  {

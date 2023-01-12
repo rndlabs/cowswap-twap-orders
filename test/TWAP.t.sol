@@ -13,6 +13,7 @@ import {Enum} from "safe/common/Enum.sol";
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
+import {ConditionalOrderLib} from "../src/libraries/ConditionalOrderLib.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
@@ -70,13 +71,14 @@ contract CoWTWAP is Base {
             t: 1 days,
             span: 12 hours
         });
+        bytes memory bundleBytes = abi.encode(bundle);
 
         // 1. create a TWAP order
-        bytes32 typedHash = bundle.hash(settlement.domainSeparator());
+        bytes32 typedHash = ConditionalOrderLib.hash(bundleBytes, settlement.domainSeparator());
 
         // this should emit a ConditionalOrderCreated event
         vm.expectEmit(true, true, true, false);
-        emit ConditionalOrderCreated(address(safe), abi.encode(bundle));
+        emit ConditionalOrderCreated(address(safe), bundleBytes);
 
         // Everything here happens in a batch
         execute(
@@ -117,7 +119,7 @@ contract CoWTWAP is Base {
                         uint256(388), // 4 bytes for the selector + 384 bytes for the bundle variable length header
                         abi.encodeWithSelector(
                             twap.dispatch.selector,
-                            abi.encode(bundle)
+                            bundleBytes
                         )
                     )
                 )
@@ -127,18 +129,18 @@ contract CoWTWAP is Base {
         );
 
         // get a part of the TWAP bundle
-        GPv2Order.Data memory order = twap.getTradeableOrder(abi.encode(bundle));
+        GPv2Order.Data memory order = twap.getTradeableOrder(bundleBytes);
         console.logBytes(abi.encode(order));
 
         // Test the isValidSignature function
         bytes32 orderDigest = order.hash(settlement.domainSeparator());
 
-        assertTrue(twap.isValidSignature(orderDigest, abi.encode(bundle)) == bytes4(0x1626ba7e));
+        assertTrue(twap.isValidSignature(orderDigest, bundleBytes) == bytes4(0x1626ba7e));
 
         // fast forward to the end of the span
         vm.warp(block.timestamp + 12 hours + 1 minutes);
 
-        assertTrue(twap.isValidSignature(orderDigest, abi.encode(bundle)) != bytes4(0x1626ba7e));
+        assertTrue(twap.isValidSignature(orderDigest, bundleBytes) != bytes4(0x1626ba7e));
     }
 
     function testSetCoWTWAPFallbackHandler() public {
