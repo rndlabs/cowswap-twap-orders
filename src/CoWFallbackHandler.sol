@@ -13,8 +13,6 @@ import {SafeSigUtils} from "./libraries/SafeSigUtils.sol";
 /// @author mfw78 <mfw78@rndlabs.xyz>
 /// @dev This is an abstract contract that smart orders can inherit from.
 abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, ConditionalOrder {
-    using SafeSigUtils for bytes;
-
     /// @dev The domain separator from the settlement contract used to verify
     /// signatures.
     bytes32 internal immutable SETTLEMENT_DOMAIN_SEPARATOR;
