@@ -8,11 +8,8 @@ import {SafeCast} from "@openzeppelin/utils/math/SafeCast.sol";
 
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
-import {GnosisSafe} from "safe/GnosisSafe.sol";
-
 import {ConditionalOrder} from "../interfaces/ConditionalOrder.sol";
 import {ConditionalOrderLib} from "../libraries/ConditionalOrderLib.sol";
-import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 library TWAPOrder {
     using SafeCast for uint256;
