@@ -80,6 +80,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     {
         /// @dev Signature length of 0 is used to indicate a pre-signed message in the Safe.
         ///      If not a pre-signed message, then try to verify the order.
+        if (_signature.length != 0 && verifyOrder(_dataHash, _signature)) {
             return UPDATED_MAGIC_VALUE;
         }
 

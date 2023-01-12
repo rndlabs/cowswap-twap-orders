@@ -33,6 +33,9 @@ library TWAPOrder {
         uint256 span;
     }
 
+    /// @dev Update this if the TWAP bundle struct changes.
+    uint256 constant TWAP_ORDER_BYTES_LENGTH = 320;
+
     // --- constants
 
     /// @dev keccak256("conditionalorder.twap")

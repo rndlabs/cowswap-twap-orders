@@ -44,6 +44,10 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         onlySignedAndNotCancelled(_signature)
         returns (bool)
     {
+        /// @dev The signature must be the correct length to be a TWAP bundle.
+        if (_signature.length != TWAPOrder.TWAP_ORDER_BYTES_LENGTH) {
+            return false;
+        }
 
         /// @dev Decode the signature into a TWAP bundle.
         TWAPOrder.Data memory bundle = abi.decode(_signature, (TWAPOrder.Data));
