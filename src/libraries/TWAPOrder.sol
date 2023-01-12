@@ -48,22 +48,6 @@ library TWAPOrder {
         return abi.encode(self).hash(domainSeparator);
     }
 
-    /// @dev Determine if the TWAP bundle has been signed and not cancelled
-    /// @param self The TWAP bundle to check.
-    /// @param safe The Gnosis Safe to check for a signature.
-    /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
-    /// @return twapDigest The TWAP bundle's TypedData hash.
-    function onlySignedAndNotCancelled(
-        Data memory self,
-        GnosisSafe safe,
-        bytes32 settlementDomainSeparator
-    ) internal view returns (bytes32) {
-        return abi.encode(self).onlySignedAndNotCancelled(
-            safe,
-            settlementDomainSeparator
-        );
-    }
-
     function _kindOfOrder(Data memory self) internal pure returns (bytes32) {
         if (self.flags == 0)  {
             return GPv2Order.KIND_SELL;

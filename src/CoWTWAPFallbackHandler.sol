@@ -20,19 +20,13 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         CoWFallbackHandler(_settlementContract)
     {}
 
-    function dispatch(bytes calldata payload) external override {
-        TWAPOrder.Data memory bundle = abi.decode(payload, (TWAPOrder.Data));        
-        // 1. Verify the TWAP bundle is signed by the Safe and not cancelled.
-        bundle.onlySignedAndNotCancelled(
-            GnosisSafe(payable(msg.sender)),
-            SETTLEMENT_DOMAIN_SEPARATOR
-        );
-
-        // 2. The TWAP bundle is valid, so emit the event.
-        emit ConditionalOrderCreated(msg.sender, abi.encode(payload));
-    }
-
-    function getTradeableOrder(bytes calldata payload) external view override returns (GPv2Order.Data memory) {
+    function getTradeableOrder(bytes calldata payload) 
+        external
+        view
+        override
+        onlySignedAndNotCancelled(payload) 
+        returns (GPv2Order.Data memory) 
+    {
         TWAPOrder.Data memory bundle = abi.decode(payload, (TWAPOrder.Data));
         // 1. Verify the TWAP bundle is signed by the Safe and not cancelled.
         bundle.onlySignedAndNotCancelled(
@@ -44,18 +38,14 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         return bundle.orderFor();
     }
 
-    function verifyOrder(bytes32 _hash, bytes memory _signature)
+    function verifyOrder(bytes32 _hash, bytes memory _signature) 
         internal
         view
         override
+        onlySignedAndNotCancelled(_signature)
         returns (bool)
     {
         TWAPOrder.Data memory bundle = abi.decode(_signature, (TWAPOrder.Data));
-        // 1. Verify the TWAP bundle is signed by the Safe and not cancelled.
-        bundle.onlySignedAndNotCancelled(
-            GnosisSafe(payable(msg.sender)),
-            SETTLEMENT_DOMAIN_SEPARATOR
-        );
 
         // 2. The order submitted must be a part of the TWAP bundle. Get the order
         // from the bundle and verify the hash. `orderFor` will revert if the

@@ -5,16 +5,12 @@ import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 import {
     CONDITIONAL_ORDER_TYPE_HASH,
-    CANCEL_ORDER_TYPE_HASH,
-    ConditionalOrder
+    CANCEL_ORDER_TYPE_HASH
 } from "../interfaces/ConditionalOrder.sol";
-import {SafeSigUtils} from "./SafeSigUtils.sol";
 
 /// @title Conditional Order Library
 /// @author mfw78 <mfw78@rndlabs.xyz>
 library ConditionalOrderLib {
-    using SafeSigUtils for bytes;
-
     /// @dev Get the EIP-712 TypedData hash for an order.
     /// @param payload The implementation specific conditional order to `structHash`.
     /// @param domainSeparator The settlement contract's EIP-712 domain separator to use.
@@ -59,37 +55,5 @@ library ConditionalOrderLib {
                 )
             )
         );
-    }
-
-    /// @dev Determine if the conditional order has been signed and not cancelled
-    /// @param payload The ABI encoded implementation agnostic payload to `structHash` for.
-    /// @param safe The Gnosis Safe to check for a signature.
-    /// @param settlementDomainSeparator The EIP-712 domain separator (of the settlement contract) to use.
-    /// @return conditionalOrderHashStruct The TypedData has of the conditional order.
-    function onlySignedAndNotCancelled(
-        bytes memory payload,
-        GnosisSafe safe,
-        bytes32 settlementDomainSeparator
-    ) internal view returns (bytes32) {
-        bytes32 conditionalOrderHashStruct = hash(payload, settlementDomainSeparator);
-        bytes32 safeDomainSeparator = safe.domainSeparator();
-
-        /// @dev Determine if the conditional order has been signed by the Safe
-        bytes32 messageHash = abi.encode(conditionalOrderHashStruct).getMessageHash(safeDomainSeparator);
-
-        if (!SafeSigUtils.isSigned(messageHash, safe)) {
-            revert ConditionalOrder.OrderNotSigned();
-        }
-
-        /// @dev Determine if the conditional order has been cancelled by the Safe
-        bytes32 cancelMessageHash = abi.encode(
-            hashCancel(conditionalOrderHashStruct, settlementDomainSeparator)
-        ).getMessageHash(safeDomainSeparator);
-
-        if (SafeSigUtils.isSigned(cancelMessageHash, safe)) {
-            revert ConditionalOrder.OrderCancelled();
-        }
-
-        return conditionalOrderHashStruct;
     }
 }
