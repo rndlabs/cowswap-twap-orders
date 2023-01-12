@@ -61,6 +61,13 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         }
         _;
     }
+
+    /// @inheritdoc ConditionalOrder
+    function dispatch(bytes calldata payload) external override onlySignedAndNotCancelled(payload) {
+        emit ConditionalOrderCreated(msg.sender, payload);
+    }
+
+    /// @inheritdoc CompatibilityFallbackHandler
     /// @dev Should return whether the signature provided is valid for the provided data. 
     /// 1. Try to verify the order using the smart order logic.
     /// 2. If the order verification fails, try to verify the signature using the
