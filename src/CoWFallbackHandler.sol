@@ -71,22 +71,15 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @dev Should return whether the signature provided is valid for the provided data. 
     /// 1. Try to verify the order using the smart order logic.
     /// 2. If the order verification fails, try to verify the signature using the
-    ///    chained fallback handler. 
-    /// @param _dataHash      Hash of the data to be signed
-    /// @param _signature Signature byte array associated with _data
-    /// MUST return the bytes4 magic value 0x1626ba7e when function passes.
-    /// MUST NOT modify state (using STATICCALL for solc < 0.5, view modifier for
-    /// solc > 0.5)
-    /// MUST allow external calls
-    ///
+    ///    chained fallback handler.
     function isValidSignature(bytes32 _dataHash, bytes calldata _signature)
         public
         view
         override
         returns (bytes4 magicValue)
     {
-        // First try to verify the order using the smart order logic.
-        if (verifyOrder(_dataHash, _signature)) {
+        /// @dev Signature length of 0 is used to indicate a pre-signed message in the Safe.
+        ///      If not a pre-signed message, then try to verify the order.
             return UPDATED_MAGIC_VALUE;
         }
 

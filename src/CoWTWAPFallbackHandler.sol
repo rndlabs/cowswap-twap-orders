@@ -11,7 +11,7 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 
 /// @title CoW TWAP Fallback Handler
 /// @author mfw78 <mfw78@rndlabs.xyz>
-/// @dev A fallback handler to enable TWAP orders on Safe, settling via CoW.
+/// @dev A fallback handler to enable TWAP orders on Safe, settling via CoW Protocol.
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     using TWAPOrder for TWAPOrder.Data;
     using GPv2Order for GPv2Order.Data;
@@ -27,17 +27,16 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         onlySignedAndNotCancelled(payload) 
         returns (GPv2Order.Data memory) 
     {
+        /// @dev Decode the payload into a TWAP bundle.
         TWAPOrder.Data memory bundle = abi.decode(payload, (TWAPOrder.Data));
-        // 1. Verify the TWAP bundle is signed by the Safe and not cancelled.
-        bundle.onlySignedAndNotCancelled(
-            GnosisSafe(payable(msg.sender)),
-            SETTLEMENT_DOMAIN_SEPARATOR
-        );
 
-        // 2. The TWAP bundle is valid, so return the order that is part of the bundle.
+        /// @dev Return the order from the bundle. `orderFor` will revert if there 
+        /// is no order for the current block.
         return bundle.orderFor();
     }
 
+    /// @inheritdoc CoWFallbackHandler
+    /// @param _signature An ABI-encoded TWAP bundle.
     function verifyOrder(bytes32 _hash, bytes memory _signature) 
         internal
         view
@@ -45,16 +44,17 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         onlySignedAndNotCancelled(_signature)
         returns (bool)
     {
+
+        /// @dev Decode the signature into a TWAP bundle.
         TWAPOrder.Data memory bundle = abi.decode(_signature, (TWAPOrder.Data));
 
-        // 2. The order submitted must be a part of the TWAP bundle. Get the order
-        // from the bundle and verify the hash. `orderFor` will revert if the
-        // order is not part of the bundle.
+        /// @dev The order submitted must be a part of the TWAP bundle. Get the order
+        /// from the bundle and verify the hash. `orderFor` will revert if the
+        /// order is not part of the bundle.
         GPv2Order.Data memory order = bundle.orderFor();
 
-        // 3. Check the part of the order is the same as the hash. If so, the signature
-        // is valid.
+        /// @dev The derived order hash must match the order hash provided in the
+        /// signature. 
         return order.hash(SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
     }
-
 }

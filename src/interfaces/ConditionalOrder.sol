@@ -31,6 +31,9 @@ bytes32 constant CONDITIONAL_ORDER_TYPE_HASH = hex"59a89a42026f77464983113514109
 /// The `order` parameter is the `hashStruct` of the `ConditionalOrder`. 
 bytes32 constant CANCEL_ORDER_TYPE_HASH = hex"e2d395a4176e36febca53784f02b9bf31a44db36d5688fe8fc4306e6dfa54148";
 
+/// @title Conditional Order Interface
+/// @author CoW Protocol Developers + mfw78 <mfw78@rndlabs.xyz>
+/// @notice This interface is used to create conditional orders that can be posted to the CoW Protocol API.
 interface ConditionalOrder {
     /// @dev This error is returned if the order condition is not met.
     error OrderNotValid();
@@ -53,5 +56,6 @@ interface ConditionalOrder {
     ///      Reverts if the order condition is not met.
     /// @param payload The implementation-specific payload used to create the order, as emitted by the
     ///        ConditionalOrderCreated event
+    /// @return order to be posted to the CoW Protocol API
     function getTradeableOrder(bytes calldata payload) external view returns (GPv2Order.Data memory);
 }
