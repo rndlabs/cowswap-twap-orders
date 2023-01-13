@@ -25,20 +25,19 @@ contract CoWTWAP is Base {
     using GPv2Order for GPv2Order.Data;
 
     event ConditionalOrderCreated(address indexed, bytes);
-    GnosisSafe public safe;
-    CoWTWAPFallbackHandler twapHandler;
-    CoWTWAPFallbackHandler twap;
+
+    CoWTWAPFallbackHandler twapSingleton;
+    CoWTWAPFallbackHandler twapSafe;
 
     function setUp() public override(Base) virtual {
         super.setUp();
 
         // deploy the CoW TWAP fallback handler
-        twapHandler = new CoWTWAPFallbackHandler(settlement);
+        twapSingleton = new CoWTWAPFallbackHandler(settlement);
 
-        // sign the transaction by alice and bob (sort their account by ascending order)
-        // TestAccount[] memory _signers = new TestAccount[](2);
-        // _signers[0] = alice;
-        // _signers[1] = bob;
+        // enable the CoW TWAP fallback handler for safe 1
+        _enableTWAP(safe1);
+        twapSafe = CoWTWAPFallbackHandler(address(safe1));
     }
 
     function testCreateTWAP() public {
@@ -62,11 +61,11 @@ contract CoWTWAP is Base {
 
         // this should emit a ConditionalOrderCreated event
         vm.expectEmit(true, true, true, false);
-        emit ConditionalOrderCreated(address(safe), bundleBytes);
+        emit ConditionalOrderCreated(address(twapSafe), bundleBytes);
 
         // Everything here happens in a batch
         execute(
-            safe,
+            GnosisSafe(payable(address(twapSafe))),
             address(multisend),
             0,
             abi.encodeWithSelector(
@@ -98,11 +97,11 @@ contract CoWTWAP is Base {
                     // 3. dispatch the TWAP order
                     abi.encodePacked(
                         Enum.Operation.Call,
-                        address(safe),
+                        address(twapSafe),
                         uint256(0),
                         uint256(388), // 4 bytes for the selector + 384 bytes for the bundle variable length header
                         abi.encodeWithSelector(
-                            twap.dispatch.selector,
+                            twapSafe.dispatch.selector,
                             bundleBytes
                         )
                     )
@@ -113,47 +112,40 @@ contract CoWTWAP is Base {
         );
 
         // get a part of the TWAP bundle
-        GPv2Order.Data memory order = twap.getTradeableOrder(bundleBytes);
+        GPv2Order.Data memory order = twapSafe.getTradeableOrder(bundleBytes);
         console.logBytes(abi.encode(order));
 
         // Test the isValidSignature function
         bytes32 orderDigest = order.hash(settlement.domainSeparator());
 
-        assertTrue(twap.isValidSignature(orderDigest, bundleBytes) == bytes4(0x1626ba7e));
+        assertTrue(twapSafe.isValidSignature(orderDigest, bundleBytes) == bytes4(0x1626ba7e));
 
         // fast forward to the end of the span
         vm.warp(block.timestamp + 12 hours + 1 minutes);
 
-        assertTrue(twap.isValidSignature(orderDigest, bundleBytes) != bytes4(0x1626ba7e));
+        assertTrue(twapSafe.isValidSignature(orderDigest, bundleBytes) != bytes4(0x1626ba7e));
     }
 
     function testSetCoWTWAPFallbackHandler() public {
         // set the fallback handler to the CoW TWAP fallback handler
-        _enableTWAP();
+        _enableTWAP(safe2);
 
         // check that the fallback handler is set
         // get the storage at 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5
         // which is the storage slot of the fallback handler
         assertEq(
-            vm.load(address(safe), 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5),
-            bytes32(uint256(uint160(address(twapHandler))))
+            vm.load(address(safe2), 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5),
+            bytes32(uint256(uint160(address(twapSingleton))))
         );
 
         // check some of the standard interfaces that the fallback handler supports
-        CoWTWAPFallbackHandler _safe = CoWTWAPFallbackHandler(address(safe));
+        CoWTWAPFallbackHandler _safe = CoWTWAPFallbackHandler(address(safe2));
         assertTrue(_safe.supportsInterface(type(IERC165).interfaceId));
         assertTrue(_safe.supportsInterface(type(ERC721TokenReceiver).interfaceId));
         assertTrue(_safe.supportsInterface(type(ERC1155TokenReceiver).interfaceId));
     }
 
-    function _enableTWAP() internal {
-        twap = CoWTWAPFallbackHandler(address(safe));
-
-        // declare the signers
-        TestAccount[] memory signers = new TestAccount[](2);
-        signers[0] = alice;
-        signers[1] = bob;
-
+    function _enableTWAP(GnosisSafe safe) internal {
         // do the transaction
         execute(
             safe,
@@ -161,7 +153,7 @@ contract CoWTWAP is Base {
             0,
             abi.encodeWithSelector(
                 safe.setFallbackHandler.selector,
-                address(twapHandler)
+                address(twapSingleton)
             ),
             Enum.Operation.Call,
             signers()
