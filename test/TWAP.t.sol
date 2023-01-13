@@ -32,15 +32,6 @@ contract CoWTWAP is Base {
     function setUp() public override(Base) virtual {
         super.setUp();
 
-        // create a safe with alice, bob and carol as owners
-        address[] memory owners = new address[](3);
-        owners[0] = alice.addr;
-        owners[1] = bob.addr;
-        owners[2] = carol.addr;
-
-        // create the safe with a threshold of 2
-        safe = GnosisSafe(payable(createSafe(owners, 2)));
-
         // deploy the CoW TWAP fallback handler
         twapHandler = new CoWTWAPFallbackHandler(settlement);
 
@@ -51,13 +42,6 @@ contract CoWTWAP is Base {
     }
 
     function testCreateTWAP() public {
-        // set the fallback handler to the CoW TWAP fallback handler
-        _enableTWAP();
-
-        TestAccount[] memory signers = new TestAccount[](2);
-        signers[0] = alice;
-        signers[1] = bob;
-
         // declare the TWAP bundle
         TWAPOrder.Data memory bundle = TWAPOrder.Data({
             token0: token0,
@@ -125,7 +109,7 @@ contract CoWTWAP is Base {
                 )
             ),
             Enum.Operation.DelegateCall,
-            signers
+            signers()
         );
 
         // get a part of the TWAP bundle
@@ -180,7 +164,7 @@ contract CoWTWAP is Base {
                 address(twapHandler)
             ),
             Enum.Operation.Call,
-            signers
+            signers()
         );
     }
 }

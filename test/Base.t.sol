@@ -3,6 +3,8 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 
+import {GnosisSafe} from "safe/GnosisSafe.sol";
+
 import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.sol";
 import {Tokens} from "./helpers/Tokens.sol";
 import {CoWProtocol} from "./helpers/CoWProtocol.sol";
@@ -17,6 +19,9 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
     TestAccount bob;
     TestAccount carol;
 
+    GnosisSafe public safe1;
+    GnosisSafe public safe2;
+
     function setUp() public override(CoWProtocol) virtual {
         // setup CoWProtocol
         super.setUp();
@@ -29,5 +34,21 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
         // give some tokens to alice and bob
         deal(address(token0), alice.addr, 1000e18);
         deal(address(token1), bob.addr, 1000e18);
+
+        // create a safe with alice, bob and carol as owners and a threshold of 2
+        address[] memory owners = new address[](3);
+        owners[0] = alice.addr;
+        owners[1] = bob.addr;
+        owners[2] = carol.addr;
+
+        safe1 = GnosisSafe(payable(createSafe(owners, 2, 0)));
+        safe2 = GnosisSafe(payable(createSafe(owners, 2, 1)));
+    }
+
+    function signers() internal view returns (TestAccount[] memory) {
+        TestAccount[] memory signers = new TestAccount[](2);
+        signers[0] = alice;
+        signers[1] = bob;
+        return signers;
     }
 }

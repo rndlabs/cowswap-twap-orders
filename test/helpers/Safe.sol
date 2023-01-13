@@ -37,7 +37,7 @@ abstract contract Safe {
     /// @param owners The list of owners of the Gnosis Safe.
     /// @param threshold The number of owners required to confirm a transaction.
     /// @return safe The Gnosis Safe proxy.
-    function createSafe(address[] memory owners, uint256 threshold)
+    function createSafe(address[] memory owners, uint256 threshold, uint256 nonce)
         internal
         returns (GnosisSafeProxy)
     {
@@ -55,7 +55,7 @@ abstract contract Safe {
                     0,
                     address(0)
                 ),
-                0 // nonce
+                nonce // nonce
             )
         );
     }
