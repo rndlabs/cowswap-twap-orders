@@ -50,6 +50,11 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
     }
 
     function signers() internal view returns (TestAccount[] memory) {
+        TestAccount[] memory _signers = new TestAccount[](2);
+        _signers[0] = alice;
+        _signers[1] = bob;
+        return _signers;
+    }
 
     function setFallbackHandler(GnosisSafe safe, CoWFallbackHandler handler) internal {
         // do the transaction

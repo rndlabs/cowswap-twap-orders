@@ -47,7 +47,7 @@ library TWAPOrder {
             revert ConditionalOrder.OrderNotValid();
         }
 
-        // Order is not valid after the last part.
+        // Order is expired after the last part.
         if (block.timestamp > self.t0 + (self.n * self.t)) {
             revert ConditionalOrder.OrderExpired();
         }
