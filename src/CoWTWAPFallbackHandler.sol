@@ -20,9 +20,10 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         external
         view
         override
-        onlySignedAndNotCancelled(payload) 
         returns (GPv2Order.Data memory) 
     {
+        _onlySignedAndNotCancelled(payload);
+
         /// @dev Decode the payload into a TWAP bundle.
         TWAPOrder.Data memory bundle = abi.decode(payload, (TWAPOrder.Data));
 
@@ -40,9 +41,10 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         internal
         view
         override
-        onlySignedAndNotCancelled(_signature)
         returns (bool)
     {
+        _onlySignedAndNotCancelled(_signature);
+
         /// @dev The signature must be the correct length to be a TWAP bundle.
         if (_signature.length != TWAPOrder.TWAP_ORDER_BYTES_LENGTH) {
             return false;

@@ -27,42 +27,49 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
 
     /// @dev Modifier that checks that the order is signed by the Safe and has
     /// not been cancelled.
-    modifier onlySignedAndNotCancelled(bytes memory order) {
+    function _onlySignedAndNotCancelled(bytes memory order) internal view {
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
-        bytes32 conditionalOrderDigest = ConditionalOrderLib.hash(order, SETTLEMENT_DOMAIN_SEPARATOR);
+        bytes32 conditionalOrderDigest = ConditionalOrderLib.hash(
+            order,
+            SETTLEMENT_DOMAIN_SEPARATOR
+        );
         bytes32 safeDomainSeparator = safe.domainSeparator();
 
         /// @dev If the order has not been signed by the Safe, revert
-        if (!SafeSigUtils.isSigned(
-            SafeSigUtils.getMessageHash(
-                abi.encode(conditionalOrderDigest),
-                safeDomainSeparator
-            ),
-            safe
-        )) {
+        if (
+            !SafeSigUtils.isSigned(
+                SafeSigUtils.getMessageHash(
+                    abi.encode(conditionalOrderDigest),
+                    safeDomainSeparator
+                ),
+                safe
+            )
+        ) {
             revert ConditionalOrder.OrderNotSigned();
         }
 
         /// @dev If the order has been cancelled by the Safe, revert
-        if (SafeSigUtils.isSigned(
-            SafeSigUtils.getMessageHash(
-                abi.encode(
-                    ConditionalOrderLib.hashCancel(
-                        conditionalOrderDigest,
-                        SETTLEMENT_DOMAIN_SEPARATOR
-                    )
+        if (
+            SafeSigUtils.isSigned(
+                SafeSigUtils.getMessageHash(
+                    abi.encode(
+                        ConditionalOrderLib.hashCancel(
+                            conditionalOrderDigest,
+                            SETTLEMENT_DOMAIN_SEPARATOR
+                        )
+                    ),
+                    safeDomainSeparator
                 ),
-                safeDomainSeparator
-            ),
-            safe
-        )) {
+                safe
+            )
+        ) {
             revert ConditionalOrder.OrderCancelled();
         }
-        _;
     }
 
     /// @inheritdoc ConditionalOrder
-    function dispatch(bytes calldata payload) external override onlySignedAndNotCancelled(payload) {
+    function dispatch(bytes calldata payload) external override {
+        _onlySignedAndNotCancelled(payload);
         emit ConditionalOrderCreated(msg.sender, payload);
     }
 
