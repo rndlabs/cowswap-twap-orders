@@ -53,7 +53,7 @@ library TWAPOrder {
         }
 
         // get the TWAP bundle part number and this corresponding `validTo`
-        uint256 part = (block.timestamp - self.t0) % self.t;
+        uint256 part = (block.timestamp - self.t0) / self.t;
         uint256 validTo = self.span == 0 
             ? self.t0 + ((part + 1) * self.t) - 1
             : self.t0 + (part * self.t) + self.span;
