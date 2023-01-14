@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
-
 import {IERC165} from "safe/interfaces/IERC165.sol";
 import {ERC721TokenReceiver} from "safe/interfaces/ERC721TokenReceiver.sol";
 import {ERC777TokensRecipient} from "safe/interfaces/ERC777TokensRecipient.sol";
 import {ERC1155TokenReceiver} from "safe/interfaces/ERC1155TokenReceiver.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
-import {Enum} from "safe/common/Enum.sol";
 
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
-import {ConditionalOrderLib} from "../src/libraries/ConditionalOrderLib.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
@@ -26,6 +22,10 @@ contract CoWTWAP is Base {
     CoWTWAPFallbackHandler twapSingleton;
     CoWTWAPFallbackHandler twapSafe;
 
+    TWAPOrder.Data defaultBundle;
+    bytes32 defaultBundleHash;
+    bytes defaultBundleBytes;
+
     function setUp() public override(Base) virtual {
         super.setUp();
 
@@ -33,55 +33,26 @@ contract CoWTWAP is Base {
         twapSingleton = new CoWTWAPFallbackHandler(settlement);
 
         // enable the CoW TWAP fallback handler for safe 1
-        _enableTWAP(safe1);
+        setFallbackHandler(safe1, twapSingleton);
         twapSafe = CoWTWAPFallbackHandler(address(safe1));
-    }
 
-    function testCreateTWAP() public {
-        // declare the TWAP bundle
-        TWAPOrder.Data memory bundle = TWAPOrder.Data({
-            sellToken: token0,
-            buyToken: token1,
-            receiver: address(0), // the safe itself
-            totalSellAmount: 1000e18,
-            maxPartLimit: 100e18,
-            t0: block.timestamp,
-            n: 10,
-            t: 1 days,
-            span: 12 hours
-        });
-        bytes memory bundleBytes = abi.encode(bundle);
+        // Set a default bundle
+        defaultBundle = _twapTestBundle(block.timestamp + 1 days);
+        defaultBundleBytes = abi.encode(defaultBundle);
 
-        // this should emit a ConditionalOrderCreated event
-        vm.expectEmit(true, true, true, false);
-        emit ConditionalOrderCreated(address(twapSafe), bundleBytes);
-
-        // Everything here happens in a batch
         createOrder(
             GnosisSafe(payable(address(twapSafe))),
-            bundleBytes,
-            bundle.sellToken,
-            bundle.totalSellAmount
+            defaultBundleBytes,
+            defaultBundle.sellToken,
+            defaultBundle.totalSellAmount
         );
-
-        // get a part of the TWAP bundle
-        GPv2Order.Data memory order = twapSafe.getTradeableOrder(bundleBytes);
-        console.logBytes(abi.encode(order));
-
-        // Test the isValidSignature function
-        bytes32 orderDigest = order.hash(settlement.domainSeparator());
-
-        assertTrue(twapSafe.isValidSignature(orderDigest, bundleBytes) == bytes4(0x1626ba7e));
-
-        // fast forward to the end of the span
-        vm.warp(block.timestamp + 12 hours + 1 minutes);
-
-        assertTrue(twapSafe.isValidSignature(orderDigest, bundleBytes) != bytes4(0x1626ba7e));
     }
 
-    function testSetCoWTWAPFallbackHandler() public {
+    /// @dev Test that the fallback handler can be set on a Safe and that it
+    /// at least supports the safe interfaces as Compatability fallback handler.
+    function testSetFallbackHandler() public {
         // set the fallback handler to the CoW TWAP fallback handler
-        _enableTWAP(safe2);
+        setFallbackHandler(safe2, twapSingleton);
 
         // check that the fallback handler is set
         // get the storage at 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5
@@ -98,76 +69,114 @@ contract CoWTWAP is Base {
         assertTrue(_safe.supportsInterface(type(ERC1155TokenReceiver).interfaceId));
     }
 
-    function _enableTWAP(GnosisSafe safe) internal {
-        // do the transaction
-        execute(
-            safe,
-            address(safe),
-            0,
-            abi.encodeWithSelector(
-                safe.setFallbackHandler.selector,
-                address(twapSingleton)
-            ),
-            Enum.Operation.Call,
-            signers()
+    /// @dev Test creating a TWAP order (event emission)
+    ///      A valid order has the following properties:
+    ///      - The order is signed by the safe
+    ///      - The order is not cancelled
+    function testCreateTWAPOrder() public {
+        /// @dev We use a new Safe for this test to illustrate that the fallback
+        /// handler can be set on an arbitrary Safe.
+        setFallbackHandler(safe2, twapSingleton);
+        CoWTWAPFallbackHandler _twapSafe = CoWTWAPFallbackHandler(address(safe2));
+
+        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(order);
+
+        // this should emit a ConditionalOrderCreated event
+        vm.expectEmit(true, true, true, false);
+        emit ConditionalOrderCreated(address(_twapSafe), orderBytes);
+
+        // Everything here happens in a batch
+        createOrder(
+            GnosisSafe(payable(address(_twapSafe))),
+            orderBytes,
+            order.sellToken,
+            order.totalSellAmount
         );
+
+        // Check that the order signed by the safe.
+        bytes32 orderDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        assertTrue(_twapSafe.isValidSignature(orderDigest, "") == bytes4(0x1626ba7e));
+
+        // Check that the order is not cancelled
+        bytes32 cancelDigest = ConditionalOrderLib.hashCancel(orderDigest, settlement.domainSeparator());
+        vm.expectRevert(bytes("Hash not approved"));
+        _twapSafe.isValidSignature(cancelDigest, "");
     }
 
-    function createOrder(
-        GnosisSafe safe,
-        bytes memory conditionalOrder,
-        IERC20 sellToken,
-        uint256 sellAmount
-    ) internal {
-        // Hash of the conditional order to sign
-        bytes32 typedHash = ConditionalOrderLib.hash(conditionalOrder, settlement.domainSeparator());
+    /// @dev Test cancelling a TWAP order
+    ///      A cancelled order has the following properties:
+    ///      - A cancel order message is signed by the safe
+    function testCancelTWAPOrder() public {
+        /// @dev Set block time to the start of the TWAP bundle
+        vm.warp(defaultBundle.t0);
 
-        /// @dev Using the `multisend` contract to batch multiple transactions
-        execute(
-            safe,
-            address(multisend),
-            0,
-            abi.encodeWithSelector(
-                multisend.multiSend.selector, 
-                abi.encodePacked(
-                    // 1. sign the conditional order
-                    abi.encodePacked(
-                        uint8(Enum.Operation.DelegateCall),
-                        address(signMessageLib),
-                        uint256(0),
-                        uint256(100), // 4 bytes for the selector + 96 bytes for the typedHash as bytes
-                        abi.encodeWithSelector(
-                            signMessageLib.signMessage.selector,
-                            abi.encode(typedHash)
-                        )
-                    ),
-                    // 2. approve the tokens to be spent by the settlement contract
-                    abi.encodePacked(
-                        Enum.Operation.Call,
-                        address(sellToken),
-                        uint256(0),
-                        uint256(68), // 4 bytes for the selector + 32 bytes for the spender + 32 bytes for the amount
-                        abi.encodeWithSelector(
-                            sellToken.approve.selector,
-                            address(relayer),
-                            sellAmount
-                        )
-                    ),
-                    // 3. dispatch the TWAP order
-                    abi.encodePacked(
-                        Enum.Operation.Call,
-                        address(safe),
-                        uint256(0),
-                        uint256(388), // 4 bytes for the selector + 384 bytes for the bundle variable length header
-                        abi.encodeWithSelector(
-                            twapSafe.dispatch.selector,
-                            conditionalOrder
-                        )
-                    )
-                )
-            ),
-            Enum.Operation.DelegateCall,
-            signers()
-        );
+        // First check that the order is valid by getting a *part* of the TWAP bundle
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(defaultBundleBytes);
+
+        // Check that the order *part* is valid
+        bytes32 partDigest = GPv2Order.hash(part, settlement.domainSeparator());
+        assertTrue(twapSafe.isValidSignature(partDigest, defaultBundleBytes) == bytes4(0x1626ba7e));
+
+        // Cancel the *TWAP order*
+        bytes32 twapDigest = ConditionalOrderLib.hash(defaultBundleBytes, settlement.domainSeparator());
+        bytes32 cancelDigest = ConditionalOrderLib.hashCancel(twapDigest, settlement.domainSeparator());
+        safeSignMessage(safe1, abi.encode(cancelDigest));
+
+        // Check that the *TWAP order* is cancelled
+        twapSafe.isValidSignature(cancelDigest, "");
+
+        // Try to get a *part* of the TWAP order
+        vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
+        twapSafe.getTradeableOrder(defaultBundleBytes);
+
+        // Check that the order is not valid
+        vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
+        twapSafe.isValidSignature(partDigest, defaultBundleBytes);
+    }
+
+    /// @dev Test that the TWAP order is not valid before the start time
+    function testNotValidBefore() public {
+        vm.warp(defaultBundle.t0 - 1 seconds);
+        vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
+        
+        // attempt to get a part of the TWAP bundle
+        twapSafe.getTradeableOrder(defaultBundleBytes);
+    }
+
+    /// @dev Test that the TWAP order is not valid after the end time
+    ///      This test is a bit tricky because the TWAP order is valid for
+    ///      `n` periods of length `t` starting at time `t0`. The order is
+    ///      valid for the entire period, so the order is valid until
+    ///      `t0 + n * t` exclusive.
+    function testNotValidAfter() public {
+        vm.warp(defaultBundle.t0 + (defaultBundle.n * defaultBundle.t));
+        vm.expectRevert(ConditionalOrder.OrderExpired.selector);
+
+        // get a part of the TWAP bundle
+        twapSafe.getTradeableOrder(defaultBundleBytes);
+    }
+
+    function testNotValidAfterSpan() public {
+        vm.warp(defaultBundle.t0 + defaultBundle.span);
+        vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
+
+        // attempt to get a part of the TWAP bundle
+        twapSafe.getTradeableOrder(defaultBundleBytes);
+    }
+
+    function _twapTestBundle(uint256 startTime) internal view returns (TWAPOrder.Data memory) {
+        return
+            TWAPOrder.Data({
+                sellToken: token0,
+                buyToken: token1,
+                receiver: address(0), // the safe itself
+                totalSellAmount: 1000e18,
+                maxPartLimit: 100e18,
+                t0: startTime,
+                n: 10,
+                t: 1 days,
+                span: 12 hours
+            });
     }
 }
