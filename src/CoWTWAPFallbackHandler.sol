@@ -34,6 +34,9 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     }
 
     /// @inheritdoc CoWFallbackHandler
+    /// @dev This function verifies that the order hash provided in the signature
+    /// matches the hash of an order that is part of the TWAP bundle. The TWAP bundle is
+    /// decoded from the signature and the order is extracted from the bundle.
     /// @param _signature An ABI-encoded TWAP bundle.
     function verifyOrder(bytes32 _hash, bytes memory _signature) 
         internal
@@ -50,13 +53,11 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         /// @dev Decode the signature into a TWAP bundle.
         TWAPOrder.Data memory bundle = abi.decode(_signature, (TWAPOrder.Data));
 
-        /// @dev The order submitted must be a part of the TWAP bundle. Get the order
-        /// from the bundle and verify the hash. `orderFor` will revert if the
-        /// order is not part of the bundle.
+        /// @dev Get the part of the TWAP bundle that is valid for the current block.
+        ///      This will revert if there is no order for the current block.
         GPv2Order.Data memory order = bundle.orderFor();
 
-        /// @dev The derived order hash must match the order hash provided in the
-        /// signature. 
+        /// @dev The derived order hash must match the order hash provided in the signature. 
         return order.hash(SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
     }
 }
