@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 // TODO: Analyse gas usage of assembly vs. abi.encodePacked in hash()
 
-import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
+import {IERC20, IERC20Metadata} from "@openzeppelin/interfaces/IERC20Metadata.sol";
 import {SafeCast} from "@openzeppelin/utils/math/SafeCast.sol";
 
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
@@ -13,24 +13,24 @@ import {ConditionalOrderLib} from "../libraries/ConditionalOrderLib.sol";
 
 library TWAPOrder {
     using SafeCast for uint256;
+    using TWAPOrder for Data;
 
     // --- structs
 
     struct Data {
-        IERC20 token0;
-        IERC20 token1;
+        IERC20 sellToken;
+        IERC20 buyToken;
         address receiver;
-        uint256 amount;
-        uint256 lim;
-        uint256 flags;
+        uint256 totalSellAmount;    // total amount of sellToken to sell
+        uint256 maxPartLimit;       // max price to pay for a unit of buyToken denominated in sellToken
         uint256 t0;
         uint256 n;
         uint256 t;
         uint256 span;
     }
 
-    /// @dev Update this if the TWAP bundle struct changes.
-    uint256 constant TWAP_ORDER_BYTES_LENGTH = 320;
+    /// @dev Update this if the TWAP bundle struct changes (32 * 9).
+    uint256 constant TWAP_ORDER_BYTES_LENGTH = 288;
 
     // --- constants
 
@@ -38,14 +38,6 @@ library TWAPOrder {
     bytes32 private constant APP_DATA = bytes32(0x6a1cb2f57824a1985d4bd2c556f30a048157ee9973efc0a4714604dde0a23104);
 
     // --- functions
-
-    function _kindOfOrder(Data memory self) internal pure returns (bytes32) {
-        if (self.flags == 0)  {
-            return GPv2Order.KIND_SELL;
-        }
-
-        return GPv2Order.KIND_BUY;
-    }
 
     function _validateOrder(Data memory self) internal view returns (uint256) {
         /// @dev We determine if the order is requested at a valid time, respecting
@@ -75,43 +67,30 @@ library TWAPOrder {
         return validTo;
     }
 
-    /// @dev Calculate the part order amounts for the given order.
-    /// @param self The TWAP order data.
-    /// @param orderKind The kind of order to calculate the part amounts for.
-    /// @return partAmount The amount of the token to buy or sell.
-    /// @return partLimit The limit of the token to buy or sell.
-    function _partOrder(Data memory self, bytes32 orderKind) internal pure returns (uint256, uint256) {
-        // get the part to buy, or sell
-        uint256 partAmount = self.amount / self.n;
-        uint256 partLimit = self.amount * self.lim / self.n;
-
-        // calculate the limit for this order (ie. how much we expect to receive of the destination token)
-        return orderKind == GPv2Order.KIND_SELL
-            ? (partAmount, partLimit)
-            : (partLimit, partAmount);
-    }
-
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
         // Check the order is valid (returning a `validTo` if so)
         uint256 validTo = _validateOrder(self);
 
-        // determine the direction of the swap
-        bytes32 orderKind = _kindOfOrder(self);
-
-        // determine the respective buy / sell amounts
-        (uint256 sellAmount, uint256 buyAmount) = _partOrder(self, orderKind);
+        // get the part to sell
+        /// @dev Example we are selling 100,000 DAI in 10 parts for WETH (lots of 10,000 DAI).
+        ///      A limit price of of 1500 DAI/WETH means we do not want to pay more than 1500 DAI for 1 WETH.
+        ///      Therefore in each part, we require a minimum of 10,000 / 1500 = 6.666666666666666666 WETH.
+        ///      Thus the partLimit is 6.666666666666666666 * 10^18 = 6666666666666666666.
+        uint256 partLimit = (self.totalSellAmount / self.n) 
+            * (10**IERC20Metadata(address(self.sellToken)).decimals())
+            / self.maxPartLimit;
 
         // return the order
         order = GPv2Order.Data({
-            sellToken: orderKind == GPv2Order.KIND_SELL ? self.token0 : self.token1,
-            buyToken: orderKind == GPv2Order.KIND_BUY ? self.token0 : self.token1,
+            sellToken: self.sellToken,
+            buyToken: self.buyToken,
             receiver: self.receiver,
-            sellAmount: sellAmount,
-            buyAmount: buyAmount,
+            sellAmount: self.totalSellAmount / self.n,
+            buyAmount: partLimit,
             validTo: validTo.toUint32(),
             appData: APP_DATA,
             feeAmount: 0,
-            kind: orderKind,
+            kind: GPv2Order.KIND_SELL,
             partiallyFillable: false,
             sellTokenBalance: GPv2Order.BALANCE_ERC20,
             buyTokenBalance: GPv2Order.BALANCE_ERC20

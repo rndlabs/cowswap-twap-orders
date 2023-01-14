@@ -43,12 +43,11 @@ contract CoWTWAP is Base {
     function testCreateTWAP() public {
         // declare the TWAP bundle
         TWAPOrder.Data memory bundle = TWAPOrder.Data({
-            token0: token0,
-            token1: token1,
+            sellToken: token0,
+            buyToken: token1,
             receiver: address(0), // the safe itself
-            amount: 1000e18,
-            lim: 100e18,
-            flags: 0, // sell token0 for token1
+            totalSellAmount: 1000e18,
+            maxPartLimit: 100e18,
             t0: block.timestamp,
             n: 10,
             t: 1 days,
