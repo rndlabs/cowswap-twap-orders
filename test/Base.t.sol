@@ -53,6 +53,7 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
         TestAccount[] memory _signers = new TestAccount[](2);
         _signers[0] = alice;
         _signers[1] = bob;
+        _signers = TestAccountLib.sortAccounts(_signers);
         return _signers;
     }
 

@@ -11,6 +11,7 @@ import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
+import {SafeSigUtils} from "../src/libraries/SafeSigUtils.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
 import "./Base.t.sol";
@@ -67,6 +68,30 @@ contract CoWTWAP is Base {
         assertTrue(_safe.supportsInterface(type(IERC165).interfaceId));
         assertTrue(_safe.supportsInterface(type(ERC721TokenReceiver).interfaceId));
         assertTrue(_safe.supportsInterface(type(ERC1155TokenReceiver).interfaceId));
+    }
+
+    /// @dev Test general EIP-1271 functionality
+    function testSafeEIP1271() public {
+        // Get a message hash to sign
+        bytes32 _msg = keccak256(bytes("Cows are cool"));
+        bytes32 msgDigest = SafeSigUtils.getMessageHash(
+            abi.encode(_msg),
+            GnosisSafe(payable(address(twapSafe))).domainSeparator()
+        );
+
+        // Sign the message
+        TestAccount[] memory signers = signers();
+        bytes[] memory signatures = new bytes[](2);
+        console.log("Signers 0: %s", signers[0].addr);
+        console.log("Signers 1: %s", signers[1].addr);
+        signatures[0] = TestAccountLib.signPacked(signers[0], msgDigest);
+        signatures[1] = TestAccountLib.signPacked(signers[1], msgDigest);
+
+        // concatenate the signatures
+        bytes memory sigs = abi.encodePacked(signatures[0], signatures[1]);
+
+        // Check that the signature is valid
+        assertTrue(twapSafe.isValidSignature(_msg, sigs) == bytes4(0x1626ba7e));
     }
 
     /// @dev Test creating a TWAP order (event emission)
