@@ -48,22 +48,28 @@ library TWAPOrder {
         }
 
         // Order is expired after the last part.
-        if (block.timestamp > self.t0 + (self.n * self.t)) {
+        if (block.timestamp >= self.t0 + (self.n * self.t)) {
             revert ConditionalOrder.OrderExpired();
         }
 
         // get the TWAP bundle part number and this corresponding `validTo`
         uint256 part = (block.timestamp - self.t0) / self.t;
+        // calculate the `validTo` timestamp (exclusive)
         uint256 validTo = self.span == 0 
-            ? self.t0 + ((part + 1) * self.t) - 1
+            ? self.t0 + ((part + 1) * self.t)
             : self.t0 + (part * self.t) + self.span;
 
         // Order is not valid if not within nominated span
-        if (block.timestamp > validTo) {
+        if (block.timestamp >= validTo) {
             revert ConditionalOrder.OrderNotValid();
         }
 
-        return validTo;
+        // Return the `validTo` timestamp *inclusive*.
+        /// @dev This is because the `validTo` timestamp is exclusive, but the
+        /// `GPv2Order` struct uses an inclusive `validTo` timestamp. This saves
+        /// gas by not having to decrement the `validTo` timestamp in earlier
+        /// calculations.
+        return validTo - 1;
     }
 
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
