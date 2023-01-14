@@ -13,7 +13,6 @@ import {ConditionalOrderLib} from "../libraries/ConditionalOrderLib.sol";
 
 library TWAPOrder {
     using SafeCast for uint256;
-    using TWAPOrder for Data;
 
     // --- structs
 

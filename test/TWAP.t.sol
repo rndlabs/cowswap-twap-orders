@@ -20,9 +20,6 @@ import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 import "./Base.t.sol";
 
 contract CoWTWAP is Base {
-    using TestAccountLib for TestAccount[];
-    using TWAPOrder for TWAPOrder.Data;
-    using GPv2Order for GPv2Order.Data;
 
     event ConditionalOrderCreated(address indexed, bytes);
 

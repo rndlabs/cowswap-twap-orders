@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
+import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 import {CompatibilityFallbackHandler} from "./vendored/CompatibilityFallbackHandler.sol";

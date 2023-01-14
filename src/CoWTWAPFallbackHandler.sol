@@ -11,8 +11,6 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 /// @author mfw78 <mfw78@rndlabs.xyz>
 /// @dev A fallback handler to enable TWAP orders on Safe, settling via CoW Protocol.
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
-    using TWAPOrder for TWAPOrder.Data;
-    using GPv2Order for GPv2Order.Data;
 
     constructor(GPv2Settlement _settlementContract)
         CoWFallbackHandler(_settlementContract)
@@ -30,7 +28,7 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
 
         /// @dev Return the order from the bundle. `orderFor` will revert if there 
         /// is no order for the current block.
-        return bundle.orderFor();
+        return TWAPOrder.orderFor(bundle);
     }
 
     /// @inheritdoc CoWFallbackHandler
@@ -55,9 +53,9 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
 
         /// @dev Get the part of the TWAP bundle that is valid for the current block.
         ///      This will revert if there is no order for the current block.
-        GPv2Order.Data memory order = bundle.orderFor();
+        GPv2Order.Data memory order = TWAPOrder.orderFor(bundle);
 
         /// @dev The derived order hash must match the order hash provided in the signature. 
-        return order.hash(SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
+        return GPv2Order.hash(order, SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
     }
 }

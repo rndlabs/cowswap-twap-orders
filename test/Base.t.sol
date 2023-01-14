@@ -3,10 +3,14 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 
+import {Enum} from "safe/common/Enum.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
+import {ConditionalOrderLib} from "../src/libraries/ConditionalOrderLib.sol";
+import {CoWFallbackHandler} from "../src/CoWFallbackHandler.sol";
+
 import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.sol";
-import {Tokens} from "./helpers/Tokens.sol";
+import {IERC20, Tokens} from "./helpers/Tokens.sol";
 import {CoWProtocol} from "./helpers/CoWProtocol.sol";
 import {Safe} from "./helpers/Safe.sol";
 
