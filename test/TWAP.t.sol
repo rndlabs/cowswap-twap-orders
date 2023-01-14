@@ -27,6 +27,8 @@ contract CoWTWAP is Base {
     bytes32 defaultBundleHash;
     bytes defaultBundleBytes;
 
+    mapping (bytes32 => uint256) public orderFills;
+
     function setUp() public override(Base) virtual {
         super.setUp();
 
@@ -129,6 +131,30 @@ contract CoWTWAP is Base {
         _twapSafe.isValidSignature(cancelDigest, "");
     }
 
+    function testOrderMustBeSignedBySafe() public {
+        /// @dev We use a new Safe for this test to illustrate that the fallback
+        /// handler can be set on an arbitrary Safe.
+        setFallbackHandler(safe2, twapSingleton);
+        CoWTWAPFallbackHandler _twapSafe = CoWTWAPFallbackHandler(address(safe2));
+
+        // Use the default bundle for testing
+        vm.warp(defaultBundle.t0);
+
+        // Try get a tradeable order
+        vm.expectRevert(ConditionalOrder.OrderNotSigned.selector);
+        _twapSafe.getTradeableOrder(defaultBundleBytes);
+
+        // Try to dispatch an order (should fail because the order is not signed)
+        vm.expectRevert(ConditionalOrder.OrderNotSigned.selector);
+        _twapSafe.dispatch(defaultBundleBytes);
+
+        // Retrieve a valid order from another safe and try to use it
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(defaultBundleBytes);
+        bytes32 partDigest = GPv2Order.hash(part, settlement.domainSeparator());
+        vm.expectRevert(ConditionalOrder.OrderNotSigned.selector);
+        _twapSafe.isValidSignature(partDigest, defaultBundleBytes);
+    }
+
     /// @dev Test cancelling a TWAP order
     ///      A cancelled order has the following properties:
     ///      - A cancel order message is signed by the safe
@@ -188,6 +214,33 @@ contract CoWTWAP is Base {
 
         // attempt to get a part of the TWAP bundle
         twapSafe.getTradeableOrder(defaultBundleBytes);
+    }
+
+    /// @dev Simulate the TWAP order by iterating over every block and checking
+    ///      that the number of parts is correct.
+    function testSimulateTWAP() public {
+        uint256 totalFills = 0;
+        vm.warp(defaultBundle.t0);
+
+        while (true) {
+            try twapSafe.getTradeableOrder(defaultBundleBytes) returns (GPv2Order.Data memory order) {
+                bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
+                if (orderFills[orderDigest] == 0) {
+                    orderFills[orderDigest] = 1;
+                    totalFills++;
+                    console.logBytes32(orderDigest);
+                }
+            } catch (bytes memory lowLevelData) {
+                bytes4 desiredSelector = bytes4(keccak256(bytes("OrderExpired()")));
+                bytes4 receivedSelector = bytes4(lowLevelData);
+                if (receivedSelector == desiredSelector) {
+                    break;
+                }
+            }
+            vm.warp(block.timestamp + 12 seconds);
+        }
+
+        assertTrue(totalFills == defaultBundle.n);
     }
 
     function _twapTestBundle(uint256 startTime) internal view returns (TWAPOrder.Data memory) {
