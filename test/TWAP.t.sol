@@ -55,59 +55,16 @@ contract CoWTWAP is Base {
         });
         bytes memory bundleBytes = abi.encode(bundle);
 
-        // 1. create a TWAP order
-        bytes32 typedHash = ConditionalOrderLib.hash(bundleBytes, settlement.domainSeparator());
-
         // this should emit a ConditionalOrderCreated event
         vm.expectEmit(true, true, true, false);
         emit ConditionalOrderCreated(address(twapSafe), bundleBytes);
 
         // Everything here happens in a batch
-        execute(
+        createOrder(
             GnosisSafe(payable(address(twapSafe))),
-            address(multisend),
-            0,
-            abi.encodeWithSelector(
-                multisend.multiSend.selector, 
-                abi.encodePacked(
-                    // 1. sign the TWAP order
-                    abi.encodePacked(
-                        uint8(Enum.Operation.DelegateCall),
-                        address(signMessageLib),
-                        uint256(0),
-                        uint256(100), // 4 bytes for the selector + 96 bytes for the typedHash as bytes
-                        abi.encodeWithSelector(
-                            signMessageLib.signMessage.selector,
-                            abi.encode(typedHash)
-                        )
-                    ),
-                    // 2. approve the tokens to be spent by the settlement contract
-                    abi.encodePacked(
-                        Enum.Operation.Call,
-                        address(token0),
-                        uint256(0),
-                        uint256(68), // 4 bytes for the selector + 32 bytes for the spender + 32 bytes for the amount
-                        abi.encodeWithSelector(
-                            token0.approve.selector,
-                            address(relayer),
-                            bundle.amount
-                        )
-                    ),
-                    // 3. dispatch the TWAP order
-                    abi.encodePacked(
-                        Enum.Operation.Call,
-                        address(twapSafe),
-                        uint256(0),
-                        uint256(388), // 4 bytes for the selector + 384 bytes for the bundle variable length header
-                        abi.encodeWithSelector(
-                            twapSafe.dispatch.selector,
-                            bundleBytes
-                        )
-                    )
-                )
-            ),
-            Enum.Operation.DelegateCall,
-            signers()
+            bundleBytes,
+            bundle.sellToken,
+            bundle.totalSellAmount
         );
 
         // get a part of the TWAP bundle
@@ -155,6 +112,64 @@ contract CoWTWAP is Base {
                 address(twapSingleton)
             ),
             Enum.Operation.Call,
+            signers()
+        );
+    }
+
+    function createOrder(
+        GnosisSafe safe,
+        bytes memory conditionalOrder,
+        IERC20 sellToken,
+        uint256 sellAmount
+    ) internal {
+        // Hash of the conditional order to sign
+        bytes32 typedHash = ConditionalOrderLib.hash(conditionalOrder, settlement.domainSeparator());
+
+        /// @dev Using the `multisend` contract to batch multiple transactions
+        execute(
+            safe,
+            address(multisend),
+            0,
+            abi.encodeWithSelector(
+                multisend.multiSend.selector, 
+                abi.encodePacked(
+                    // 1. sign the conditional order
+                    abi.encodePacked(
+                        uint8(Enum.Operation.DelegateCall),
+                        address(signMessageLib),
+                        uint256(0),
+                        uint256(100), // 4 bytes for the selector + 96 bytes for the typedHash as bytes
+                        abi.encodeWithSelector(
+                            signMessageLib.signMessage.selector,
+                            abi.encode(typedHash)
+                        )
+                    ),
+                    // 2. approve the tokens to be spent by the settlement contract
+                    abi.encodePacked(
+                        Enum.Operation.Call,
+                        address(sellToken),
+                        uint256(0),
+                        uint256(68), // 4 bytes for the selector + 32 bytes for the spender + 32 bytes for the amount
+                        abi.encodeWithSelector(
+                            sellToken.approve.selector,
+                            address(relayer),
+                            sellAmount
+                        )
+                    ),
+                    // 3. dispatch the TWAP order
+                    abi.encodePacked(
+                        Enum.Operation.Call,
+                        address(safe),
+                        uint256(0),
+                        uint256(388), // 4 bytes for the selector + 384 bytes for the bundle variable length header
+                        abi.encodeWithSelector(
+                            twapSafe.dispatch.selector,
+                            conditionalOrder
+                        )
+                    )
+                )
+            ),
+            Enum.Operation.DelegateCall,
             signers()
         );
     }
