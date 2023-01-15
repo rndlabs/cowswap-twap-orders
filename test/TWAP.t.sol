@@ -11,7 +11,6 @@ import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
-import {SafeSigUtils} from "../src/libraries/SafeSigUtils.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
 import "./Base.t.sol";
@@ -76,16 +75,11 @@ contract CoWTWAP is Base {
     function testSafeEIP1271() public {
         // Get a message hash to sign
         bytes32 _msg = keccak256(bytes("Cows are cool"));
-        bytes32 msgDigest = SafeSigUtils.getMessageHash(
-            abi.encode(_msg),
-            GnosisSafe(payable(address(twapSafe))).domainSeparator()
-        );
+        bytes32 msgDigest = twapSafe.getMessageHash(abi.encode(_msg));
 
         // Sign the message
         TestAccount[] memory signers = signers();
         bytes[] memory signatures = new bytes[](2);
-        console.log("Signers 0: %s", signers[0].addr);
-        console.log("Signers 1: %s", signers[1].addr);
         signatures[0] = TestAccountLib.signPacked(signers[0], msgDigest);
         signatures[1] = TestAccountLib.signPacked(signers[1], msgDigest);
 

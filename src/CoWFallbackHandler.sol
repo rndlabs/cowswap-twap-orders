@@ -8,7 +8,6 @@ import {GnosisSafe} from "safe/GnosisSafe.sol";
 import {CompatibilityFallbackHandler} from "./vendored/CompatibilityFallbackHandler.sol";
 import {ConditionalOrder} from "./interfaces/ConditionalOrder.sol";
 import {ConditionalOrderLib} from "./libraries/ConditionalOrderLib.sol";
-import {SafeSigUtils} from "./libraries/SafeSigUtils.sol";
 
 /// @title CoW Fallback Handler
 /// @author mfw78 <mfw78@rndlabs.xyz>
@@ -33,35 +32,20 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
             order,
             SETTLEMENT_DOMAIN_SEPARATOR
         );
-        bytes32 safeDomainSeparator = safe.domainSeparator();
 
         /// @dev If the order has not been signed by the Safe, revert
-        if (
-            !SafeSigUtils.isSigned(
-                SafeSigUtils.getMessageHash(
-                    abi.encode(conditionalOrderDigest),
-                    safeDomainSeparator
-                ),
-                safe
-            )
-        ) {
+        if (safe.signedMessages(getMessageHashForSafe(safe, abi.encode(conditionalOrderDigest))) == 0) {
             revert ConditionalOrder.OrderNotSigned();
         }
 
         /// @dev If the order has been cancelled by the Safe, revert
         if (
-            SafeSigUtils.isSigned(
-                SafeSigUtils.getMessageHash(
-                    abi.encode(
-                        ConditionalOrderLib.hashCancel(
-                            conditionalOrderDigest,
-                            SETTLEMENT_DOMAIN_SEPARATOR
-                        )
-                    ),
-                    safeDomainSeparator
-                ),
-                safe
-            )
+            safe.signedMessages(
+                getMessageHashForSafe(
+                    safe,
+                    abi.encode(ConditionalOrderLib.hashCancel(conditionalOrderDigest, SETTLEMENT_DOMAIN_SEPARATOR))
+                )
+            ) != 0
         ) {
             revert ConditionalOrder.OrderCancelled();
         }
