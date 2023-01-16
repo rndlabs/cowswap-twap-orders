@@ -150,7 +150,7 @@ contract CoWTWAP is Base {
         // Retrieve a valid order from another safe and try to use it
         GPv2Order.Data memory part = twapSafe.getTradeableOrder(defaultBundleBytes);
         bytes32 partDigest = GPv2Order.hash(part, settlement.domainSeparator());
-        vm.expectRevert(ConditionalOrder.OrderNotSigned.selector);
+        vm.expectRevert(bytes("GS022"));
         _twapSafe.isValidSignature(partDigest, defaultBundleBytes);
     }
 
