@@ -42,18 +42,14 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     function verifyOrder(bytes32 _hash, bytes memory _signature) 
         internal
         view
-        override
+        override(CoWFallbackHandler)
         returns (bool)
     {
-        /// @dev The signature must be the correct length to be a TWAP bundle.
-        if (_signature.length != TWAPOrder.TWAP_ORDER_BYTES_LENGTH) {
+        /// @dev This will return `false` if the order isn't signed (ie. not a real order). 
+        /// If the order is signed, we will `revert` if the order is cancelled.
+        if (!super.verifyOrder(_hash, _signature)) {
             return false;
         }
-    
-        _onlySignedAndNotCancelled(_signature);
-
-        /// @dev Decode the signature into a TWAP bundle.
-        TWAPOrder.Data memory bundle = abi.decode(_signature, (TWAPOrder.Data));
 
         /// @dev Get the part of the TWAP bundle that is valid for the current block.
         ///      This will revert if there is no order for the current block.

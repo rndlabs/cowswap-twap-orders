@@ -4,6 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 /* solhint-disable max-line-length */
 // TODO: Add vendoring notes (ie. virtual / public on `isValidSignature`)
 //       Imports from GnosisSafe only import GnosisSafe
+//       Internal for SAFE_MSG_TYPEHASH
 
 import {DefaultCallbackHandler} from "safe/handler/DefaultCallbackHandler.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
@@ -16,7 +17,7 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
     //keccak256(
     //    "SafeMessage(bytes message)"
     //);
-    bytes32 private constant SAFE_MSG_TYPEHASH = 0x60b3cbf8b4a223d68d641b3b6ddf9a298e7f33710cf3d3a9d1146b5a6150fbca;
+    bytes32 internal constant SAFE_MSG_TYPEHASH = 0x60b3cbf8b4a223d68d641b3b6ddf9a298e7f33710cf3d3a9d1146b5a6150fbca;
 
     bytes4 internal constant SIMULATE_SELECTOR = bytes4(keccak256("simulate(address,bytes)"));
 

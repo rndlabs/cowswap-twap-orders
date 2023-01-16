@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
-import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 import {CompatibilityFallbackHandler} from "./vendored/CompatibilityFallbackHandler.sol";
@@ -27,30 +26,17 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         SETTLEMENT_DOMAIN_SEPARATOR = _settlementContract.domainSeparator();
     }
 
-    
-    function CONDITIONAL_ORDER_BYTES_LENGTH() internal pure virtual returns (uint256);
-
+    /// @dev Checks that the order is signed by the Safe and has not been cancelled.
     function _onlySignedAndNotCancelled(bytes memory order) internal view {
-        GnosisSafe safe = GnosisSafe(payable(msg.sender));
-        bytes32 conditionalOrderDigest = ConditionalOrderLib.hash(
-            order,
-            SETTLEMENT_DOMAIN_SEPARATOR
-        );
+        (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(order);
 
         /// @dev If the order has not been signed by the Safe, revert
-        if (safe.signedMessages(getMessageHashForSafe(safe, abi.encode(conditionalOrderDigest))) == 0) {
+        if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
             revert ConditionalOrder.OrderNotSigned();
         }
 
         /// @dev If the order has been cancelled by the Safe, revert
-        if (
-            safe.signedMessages(
-                getMessageHashForSafe(
-                    safe,
-                    abi.encode(ConditionalOrderLib.hashCancel(conditionalOrderDigest, SETTLEMENT_DOMAIN_SEPARATOR))
-                )
-            ) != 0
-        ) {
+        if (isCancelledConditionalOrder(safe, domainSeparator, digest)) {
             revert ConditionalOrder.OrderCancelled();
         }
     }
@@ -83,12 +69,67 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
 
     /// @dev An internal function that is overriden by the child contract when implementing
     /// the smart order logic.
-    /// @param _hash The EIP-712 structHash of the GPv2Order.
     /// @param _signature Any arbitrary data passed in to validate the order.
     /// @return A boolean indicating whether the signature is valid.
-    function verifyOrder(bytes32 _hash, bytes memory _signature)
+    function verifyOrder(bytes32, bytes memory _signature)
         internal
         view
         virtual
-        returns (bool);
+        returns (bool) 
+    {
+        (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(_signature);
+        if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
+            return false;
+        }
+
+        if (isCancelledConditionalOrder(safe, domainSeparator, digest)) {
+            revert ConditionalOrder.OrderCancelled();
+        }
+
+        return true;
+    }
+
+    /// @dev Returns false if the order has not been signed by the Safe
+    /// @param safe The Gnosis Safe that is signing the order
+    /// @param domainSeparator The domain separator of the Safe
+    /// @param hash The hash of the order
+    /// @return True if the order has been signed by the Safe
+    function isSignedConditionalOrder(GnosisSafe safe, bytes32 domainSeparator, bytes32 hash) internal view returns (bool) {
+        return safe.signedMessages(
+            getMessageHashForSafe(domainSeparator, abi.encode(hash))
+        ) != 0;
+    }
+
+    /// @dev Returns true if the order has been cancelled by the Safe
+    /// @param safe The Gnosis Safe that is cancelling the order
+    /// @param domainSeparator The domain separator of the Safe
+    /// @param hash The hash of the order
+    /// @return True if the order has been cancelled by the Safe
+    function isCancelledConditionalOrder(GnosisSafe safe, bytes32 domainSeparator, bytes32 hash) internal view returns (bool) {
+        return safe.signedMessages(
+            getMessageHashForSafe(
+                domainSeparator, 
+                abi.encode(ConditionalOrderLib.hashCancel(hash, SETTLEMENT_DOMAIN_SEPARATOR))
+            )
+        ) != 0;
+    }
+
+    /// @dev Returns hash of a message that can be signed by owners.
+    /// @param domainSeparator Domain separator of the Safe.
+    /// @param message Message that should be hashed
+    /// @return Message hash.
+    function getMessageHashForSafe(bytes32 domainSeparator, bytes memory message) internal pure returns (bytes32) {
+        bytes32 safeMessageHash = keccak256(abi.encode(SAFE_MSG_TYPEHASH, keccak256(message)));
+        return keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, safeMessageHash));
+    }
+
+    /// @dev Returns the Gnosis Safe, domain separator and hash of the order
+    /// @param order The order to be hashed
+    /// @return The Gnosis Safe, domain separator and hash of the order
+    function safeLookup(bytes memory order) internal view returns (GnosisSafe, bytes32, bytes32) {
+        GnosisSafe safe = GnosisSafe(payable(msg.sender));
+        bytes32 domainSeparator = safe.domainSeparator();
+        bytes32 digest = ConditionalOrderLib.hash(order, SETTLEMENT_DOMAIN_SEPARATOR);
+        return (safe, domainSeparator, digest);
+    }
 }
