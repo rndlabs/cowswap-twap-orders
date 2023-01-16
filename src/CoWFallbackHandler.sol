@@ -17,6 +17,9 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// signatures.
     bytes32 internal immutable SETTLEMENT_DOMAIN_SEPARATOR;
 
+    /// @dev The length of the conditional order in bytes to be overriden by the child contract.
+    function CONDITIONAL_ORDER_BYTES_LENGTH() internal pure virtual returns (uint256);
+
     constructor(GPv2Settlement _settlementContract) {
         /// @dev Cache the domain separator from the settlement contract to save
         /// on gas costs. Any change to the settlement contract will require a
@@ -24,8 +27,9 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         SETTLEMENT_DOMAIN_SEPARATOR = _settlementContract.domainSeparator();
     }
 
-    /// @dev Modifier that checks that the order is signed by the Safe and has
-    /// not been cancelled.
+    
+    function CONDITIONAL_ORDER_BYTES_LENGTH() internal pure virtual returns (uint256);
+
     function _onlySignedAndNotCancelled(bytes memory order) internal view {
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
         bytes32 conditionalOrderDigest = ConditionalOrderLib.hash(
@@ -66,9 +70,9 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         bytes32 _dataHash,
         bytes calldata _signature
     ) public view override returns (bytes4 magicValue) {
-        /// @dev Signature length of 0 is used to indicate a pre-signed message in the Safe.
+        /// @dev Only attempt to decode signatures of the expected length.
         ///      If not a pre-signed message, then try to verify the order.
-        if (_signature.length != 0 && verifyOrder(_dataHash, _signature)) {
+        if (_signature.length == CONDITIONAL_ORDER_BYTES_LENGTH() && verifyOrder(_dataHash, _signature)) {
             return UPDATED_MAGIC_VALUE;
         }
 

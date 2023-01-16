@@ -12,6 +12,8 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 /// @dev A fallback handler to enable TWAP orders on Safe, settling via CoW Protocol.
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
 
+    uint256 internal constant _CONDITIONAL_ORDER_BYTES_LENGTH = 288;
+
     constructor(GPv2Settlement _settlementContract)
         CoWFallbackHandler(_settlementContract)
     {}
@@ -59,5 +61,15 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
 
         /// @dev The derived order hash must match the order hash provided in the signature. 
         return GPv2Order.hash(order, SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
+    }
+
+    /// @inheritdoc CoWFallbackHandler
+    function CONDITIONAL_ORDER_BYTES_LENGTH() 
+        internal
+        pure
+        override
+        returns (uint256)
+    {
+        return _CONDITIONAL_ORDER_BYTES_LENGTH;
     }
 }
