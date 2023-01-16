@@ -15,6 +15,9 @@ import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
 import "./Base.t.sol";
 
+uint256 constant SELL_AMOUNT = 1000e18;
+uint256 constant LIMIT_PRICE = 100e18;
+
 contract CoWTWAP is Base {
 
     event ConditionalOrderCreated(address indexed, bytes);
@@ -41,6 +44,8 @@ contract CoWTWAP is Base {
         // Set a default bundle
         defaultBundle = _twapTestBundle(block.timestamp + 1 days);
         defaultBundleBytes = abi.encode(defaultBundle);
+
+        deal(address(token0), address(twapSafe), SELL_AMOUNT);
 
         createOrder(
             GnosisSafe(payable(address(twapSafe))),
@@ -231,7 +236,7 @@ contract CoWTWAP is Base {
                     break;
                 }
             }
-            vm.warp(block.timestamp + 12 seconds);
+            vm.warp(block.timestamp + 1 seconds);
         }
 
         assertTrue(totalFills == defaultBundle.n);
@@ -243,12 +248,12 @@ contract CoWTWAP is Base {
                 sellToken: token0,
                 buyToken: token1,
                 receiver: address(0), // the safe itself
-                totalSellAmount: 1000e18,
-                maxPartLimit: 100e18,
+                totalSellAmount: SELL_AMOUNT,
+                maxPartLimit: LIMIT_PRICE,
                 t0: startTime,
-                n: 10,
-                t: 1 days,
-                span: 12 hours
+                n: 24,
+                t: 1 hours,
+                span: 5 minutes
             });
     }
 }
