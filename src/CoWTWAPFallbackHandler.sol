@@ -24,14 +24,12 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         override
         returns (GPv2Order.Data memory) 
     {
+        /// @dev This will revert if the order isn't signed or is cancelled.
         _onlySignedAndNotCancelled(payload);
 
-        /// @dev Decode the payload into a TWAP bundle.
-        TWAPOrder.Data memory bundle = abi.decode(payload, (TWAPOrder.Data));
-
-        /// @dev Return the order from the bundle. `orderFor` will revert if there 
-        /// is no order for the current block.
-        return TWAPOrder.orderFor(bundle);
+        /// @dev Decode the payload into a TWAP bundle and get the order.
+        /// `orderFor` will revert if there is no order for the current block.
+        return TWAPOrder.orderFor(abi.decode(payload, (TWAPOrder.Data)));
     }
 
     /// @inheritdoc CoWFallbackHandler
@@ -51,11 +49,10 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
             return false;
         }
 
-        /// @dev Get the part of the TWAP bundle that is valid for the current block.
-        ///      This will revert if there is no order for the current block.
-        GPv2Order.Data memory order = TWAPOrder.orderFor(bundle);
+        /// @dev Get the part of the TWAP bundle after decoding it.
+        GPv2Order.Data memory order = TWAPOrder.orderFor(abi.decode(_signature, (TWAPOrder.Data)));
 
-        /// @dev The derived order hash must match the order hash provided in the signature. 
+        /// @dev The derived order hash must match the order hash provided to `isValidSignature`. 
         return GPv2Order.hash(order, SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
     }
 
