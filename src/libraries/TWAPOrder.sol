@@ -20,8 +20,8 @@ library TWAPOrder {
         IERC20 sellToken;
         IERC20 buyToken;
         address receiver;
-        uint256 totalSellAmount;    // total amount of sellToken to sell
-        uint256 maxPartLimit;       // max price to pay for a unit of buyToken denominated in sellToken
+        uint256 totalSellAmount; // total amount of sellToken to sell
+        uint256 maxPartLimit; // max price to pay for a unit of buyToken denominated in sellToken
         uint256 t0;
         uint256 n;
         uint256 t;
@@ -55,9 +55,7 @@ library TWAPOrder {
         // get the TWAP bundle part number and this corresponding `validTo`
         uint256 part = (block.timestamp - self.t0) / self.t;
         // calculate the `validTo` timestamp (exclusive)
-        uint256 validTo = self.span == 0 
-            ? self.t0 + ((part + 1) * self.t)
-            : self.t0 + (part * self.t) + self.span;
+        uint256 validTo = self.span == 0 ? self.t0 + ((part + 1) * self.t) : self.t0 + (part * self.t) + self.span;
 
         // Order is not valid if not within nominated span
         if (block.timestamp >= validTo) {
@@ -81,8 +79,7 @@ library TWAPOrder {
         ///      A limit price of of 1500 DAI/WETH means we do not want to pay more than 1500 DAI for 1 WETH.
         ///      Therefore in each part, we require a minimum of 10,000 / 1500 = 6.666666666666666666 WETH.
         ///      Thus the partLimit is 6.666666666666666666 * 10^18 = 6666666666666666666.
-        uint256 partLimit = (self.totalSellAmount / self.n) 
-            * (10**IERC20Metadata(address(self.sellToken)).decimals())
+        uint256 partLimit = (self.totalSellAmount / self.n) * (10 ** IERC20Metadata(address(self.sellToken)).decimals())
             / self.maxPartLimit;
 
         // return the order

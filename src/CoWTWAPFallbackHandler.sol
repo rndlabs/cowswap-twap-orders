@@ -11,19 +11,11 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 /// @author mfw78 <mfw78@rndlabs.xyz>
 /// @dev A fallback handler to enable TWAP orders on Safe, settling via CoW Protocol.
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
-
     uint256 internal constant _CONDITIONAL_ORDER_BYTES_LENGTH = 288;
 
-    constructor(GPv2Settlement _settlementContract)
-        CoWFallbackHandler(_settlementContract)
-    {}
+    constructor(GPv2Settlement _settlementContract) CoWFallbackHandler(_settlementContract) {}
 
-    function getTradeableOrder(bytes calldata payload) 
-        external
-        view
-        override
-        returns (GPv2Order.Data memory) 
-    {
+    function getTradeableOrder(bytes calldata payload) external view override returns (GPv2Order.Data memory) {
         /// @dev This will revert if the order isn't signed or is cancelled.
         _onlySignedAndNotCancelled(payload);
 
@@ -37,13 +29,13 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     /// matches the hash of an order that is part of the TWAP bundle. The TWAP bundle is
     /// decoded from the signature and the order is extracted from the bundle.
     /// @param _signature An ABI-encoded TWAP bundle.
-    function verifyOrder(bytes32 _hash, bytes memory _signature) 
+    function verifyOrder(bytes32 _hash, bytes memory _signature)
         internal
         view
         override(CoWFallbackHandler)
         returns (bool)
     {
-        /// @dev This will return `false` if the order isn't signed (ie. not a real order). 
+        /// @dev This will return `false` if the order isn't signed (ie. not a real order).
         /// If the order is signed, we will `revert` if the order is cancelled.
         if (!super.verifyOrder(_hash, _signature)) {
             return false;
@@ -52,17 +44,12 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         /// @dev Get the part of the TWAP bundle after decoding it.
         GPv2Order.Data memory order = TWAPOrder.orderFor(abi.decode(_signature, (TWAPOrder.Data)));
 
-        /// @dev The derived order hash must match the order hash provided to `isValidSignature`. 
+        /// @dev The derived order hash must match the order hash provided to `isValidSignature`.
         return GPv2Order.hash(order, SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
     }
 
     /// @inheritdoc CoWFallbackHandler
-    function CONDITIONAL_ORDER_BYTES_LENGTH() 
-        internal
-        pure
-        override
-        returns (uint256)
-    {
+    function CONDITIONAL_ORDER_BYTES_LENGTH() internal pure override returns (uint256) {
         return _CONDITIONAL_ORDER_BYTES_LENGTH;
     }
 }

@@ -70,13 +70,9 @@ contract CoWProtocolSettlement is Base {
 
         {
             // now we can sign the orders
-            aliceSignature = alice.signPacked(
-                aliceOrder.hash(settlement.domainSeparator())
-            );
+            aliceSignature = alice.signPacked(aliceOrder.hash(settlement.domainSeparator()));
 
-            bobSignature = bob.signPacked(
-                bobOrder.hash(settlement.domainSeparator())
-            );
+            bobSignature = bob.signPacked(bobOrder.hash(settlement.domainSeparator()));
         }
 
         // first declare the tokens we will be trading
@@ -127,11 +123,8 @@ contract CoWProtocolSettlement is Base {
         });
 
         // fourth declare the interactions
-        GPv2Interaction.Data[][3] memory interactions = [
-            new GPv2Interaction.Data[](0),
-            new GPv2Interaction.Data[](0),
-            new GPv2Interaction.Data[](0)
-        ];
+        GPv2Interaction.Data[][3] memory interactions =
+            [new GPv2Interaction.Data[](0), new GPv2Interaction.Data[](0), new GPv2Interaction.Data[](0)];
 
         // finally, we can execute the settlement
         vm.prank(solver.addr);

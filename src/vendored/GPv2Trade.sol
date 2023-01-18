@@ -25,7 +25,7 @@ library GPv2Trade {
 
     // uint256 constant FLAG_ORDER_KIND_SELL = 0x00;
     uint256 constant FLAG_ORDER_KIND_BUY = 0x01;
-    
+
     // uint256 constant FLAG_FILL_FOK = 0x00;
     uint256 constant FLAG_FILL_PARTIAL = 0x02;
 
@@ -94,10 +94,11 @@ library GPv2Trade {
     ///                                                10: EIP-1271
     ///                                                11: pre_sign
     /// ```
-    function encodeFlags(
-        GPv2Order.Data memory order,
-        GPv2Signing.Scheme signingScheme
-    ) internal pure returns (uint256 flags) {
+    function encodeFlags(GPv2Order.Data memory order, GPv2Signing.Scheme signingScheme)
+        internal
+        pure
+        returns (uint256 flags)
+    {
         // set the zero index bit if the order is a buy order
         if (order.kind == GPv2Order.KIND_BUY) {
             flags |= FLAG_ORDER_KIND_BUY;

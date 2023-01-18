@@ -19,7 +19,6 @@ uint256 constant SELL_AMOUNT = 1000e18;
 uint256 constant LIMIT_PRICE = 100e18;
 
 contract CoWTWAP is Base {
-
     event ConditionalOrderCreated(address indexed, bytes);
 
     CoWTWAPFallbackHandler twapSingleton;
@@ -29,9 +28,9 @@ contract CoWTWAP is Base {
     bytes32 defaultBundleHash;
     bytes defaultBundleBytes;
 
-    mapping (bytes32 => uint256) public orderFills;
+    mapping(bytes32 => uint256) public orderFills;
 
-    function setUp() public override(Base) virtual {
+    function setUp() public virtual override(Base) {
         super.setUp();
 
         // deploy the CoW TWAP fallback handler
@@ -113,12 +112,7 @@ contract CoWTWAP is Base {
         emit ConditionalOrderCreated(address(_twapSafe), orderBytes);
 
         // Everything here happens in a batch
-        createOrder(
-            GnosisSafe(payable(address(_twapSafe))),
-            orderBytes,
-            order.sellToken,
-            order.totalSellAmount
-        );
+        createOrder(GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.totalSellAmount);
 
         // Check that the order signed by the safe.
         bytes32 orderDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
@@ -189,7 +183,7 @@ contract CoWTWAP is Base {
     function testNotValidBefore() public {
         vm.warp(defaultBundle.t0 - 1 seconds);
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
-        
+
         // attempt to get a part of the TWAP bundle
         twapSafe.getTradeableOrder(defaultBundleBytes);
     }
@@ -242,18 +236,18 @@ contract CoWTWAP is Base {
         assertTrue(totalFills == defaultBundle.n);
     }
 
+
     function _twapTestBundle(uint256 startTime) internal view returns (TWAPOrder.Data memory) {
-        return
-            TWAPOrder.Data({
-                sellToken: token0,
-                buyToken: token1,
-                receiver: address(0), // the safe itself
-                totalSellAmount: SELL_AMOUNT,
-                maxPartLimit: LIMIT_PRICE,
-                t0: startTime,
-                n: 24,
-                t: 1 hours,
-                span: 5 minutes
-            });
+        return TWAPOrder.Data({
+            sellToken: token0,
+            buyToken: token1,
+            receiver: address(0), // the safe itself
+            totalSellAmount: SELL_AMOUNT,
+            maxPartLimit: LIMIT_PRICE,
+            t0: startTime,
+            n: 24,
+            t: 1 hours,
+            span: 5 minutes
+        });
     }
 }

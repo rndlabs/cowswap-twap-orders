@@ -37,23 +37,12 @@ abstract contract Safe {
     /// @param owners The list of owners of the Gnosis Safe.
     /// @param threshold The number of owners required to confirm a transaction.
     /// @return safe The Gnosis Safe proxy.
-    function createSafe(address[] memory owners, uint256 threshold, uint256 nonce)
-        internal
-        returns (GnosisSafeProxy)
-    {
+    function createSafe(address[] memory owners, uint256 threshold, uint256 nonce) internal returns (GnosisSafeProxy) {
         return GnosisSafeProxy(
             factory.createProxyWithNonce(
                 address(singleton),
                 abi.encodeWithSelector(
-                    GnosisSafe.setup.selector,
-                    owners,
-                    threshold,
-                    address(0),
-                    "",
-                    address(0),
-                    address(0),
-                    0,
-                    address(0)
+                    GnosisSafe.setup.selector, owners, threshold, address(0), "", address(0), address(0), 0, address(0)
                 ),
                 nonce // nonce
             )
@@ -66,7 +55,7 @@ abstract contract Safe {
     // @param value The amount of Ether to be sent with the transaction.
     // @param data The data to be sent with the transaction.
     // @param operation The operation to be performed.
-    // @param signers The accounts that will sign the transaction.    
+    // @param signers The accounts that will sign the transaction.
     function execute(
         GnosisSafe safe,
         address to,
@@ -76,18 +65,8 @@ abstract contract Safe {
         TestAccount[] memory signers
     ) internal {
         uint256 nonce = safe.nonce();
-        bytes32 setHandlerTx = safe.getTransactionHash(
-            to, 
-            value,
-            data,
-            operation,
-            0,
-            0,
-            0,
-            address(0),
-            address(0),
-            nonce
-        );
+        bytes32 setHandlerTx =
+            safe.getTransactionHash(to, value, data, operation, 0, 0, 0, address(0), address(0), nonce);
 
         // sign the transaction by alice and bob (sort their account by ascending order)
         signers = signers.sortAccounts();
@@ -98,17 +77,6 @@ abstract contract Safe {
         }
 
         // execute the transaction
-        safe.execTransaction(
-            to, 
-            value,
-            data,
-            operation,
-            0,
-            0,
-            0,
-            address(0),
-            payable(0),
-            abi.encodePacked(signatures)
-        );
+        safe.execTransaction(to, value, data, operation, 0, 0, 0, address(0), payable(0), abi.encodePacked(signatures));
     }
 }

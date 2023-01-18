@@ -26,10 +26,10 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
     GnosisSafe public safe1;
     GnosisSafe public safe2;
 
-    function setUp() public override(CoWProtocol) virtual {
+    function setUp() public virtual override(CoWProtocol) {
         // setup CoWProtocol
         super.setUp();
-        
+
         // setup test accounts
         alice = TestAccountLib.createTestAccount("alice");
         bob = TestAccountLib.createTestAccount("bob");
@@ -63,56 +63,35 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
             safe,
             address(safe),
             0,
-            abi.encodeWithSelector(
-                safe.setFallbackHandler.selector,
-                address(handler)
-            ),
+            abi.encodeWithSelector(safe.setFallbackHandler.selector, address(handler)),
             Enum.Operation.Call,
             signers()
         );
     }
 
-    function safeSignMessage(
-        GnosisSafe safe,
-        bytes memory message
-    ) internal {
+    function safeSignMessage(GnosisSafe safe, bytes memory message) internal {
         execute(
             safe,
             address(signMessageLib),
             0,
-            abi.encodeWithSelector(
-                signMessageLib.signMessage.selector,
-                message
-            ),
+            abi.encodeWithSelector(signMessageLib.signMessage.selector, message),
             Enum.Operation.DelegateCall,
             signers()
         );
     }
 
-    function createOrder(
-        GnosisSafe safe,
-        bytes memory conditionalOrder,
-        IERC20 sellToken,
-        uint256 sellAmount
-    ) internal {
+    function createOrder(GnosisSafe safe, bytes memory conditionalOrder, IERC20 sellToken, uint256 sellAmount)
+        internal
+    {
         // Hash of the conditional order to sign
         bytes32 typedHash = ConditionalOrderLib.hash(conditionalOrder, settlement.domainSeparator());
 
-        bytes memory signMessageTx = abi.encodeWithSelector(
-            signMessageLib.signMessage.selector,
-            abi.encode(typedHash)
-        );
+        bytes memory signMessageTx = abi.encodeWithSelector(signMessageLib.signMessage.selector, abi.encode(typedHash));
 
-        bytes memory approveTx = abi.encodeWithSelector(
-            sellToken.approve.selector,
-            address(relayer),
-            sellAmount
-        );
+        bytes memory approveTx = abi.encodeWithSelector(sellToken.approve.selector, address(relayer), sellAmount);
 
-        bytes memory dispatchTx = abi.encodeWithSelector(
-            CoWFallbackHandler(address(safe)).dispatch.selector,
-            conditionalOrder
-        );
+        bytes memory dispatchTx =
+            abi.encodeWithSelector(CoWFallbackHandler(address(safe)).dispatch.selector, conditionalOrder);
 
         /// @dev Using the `multisend` contract to batch multiple transactions
         execute(
@@ -120,7 +99,7 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
             address(multisend),
             0,
             abi.encodeWithSelector(
-                multisend.multiSend.selector, 
+                multisend.multiSend.selector,
                 abi.encodePacked(
                     // 1. sign the conditional order
                     abi.encodePacked(
@@ -131,21 +110,9 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
                         signMessageTx
                     ),
                     // 2. approve the tokens to be spent by the settlement contract
-                    abi.encodePacked(
-                        Enum.Operation.Call,
-                        address(sellToken),
-                        uint256(0),
-                        approveTx.length,
-                        approveTx
-                    ),
+                    abi.encodePacked(Enum.Operation.Call, address(sellToken), uint256(0), approveTx.length, approveTx),
                     // 3. dispatch the conditional order
-                    abi.encodePacked(
-                        Enum.Operation.Call,
-                        address(safe),
-                        uint256(0),
-                        dispatchTx.length,
-                        dispatchTx
-                    )
+                    abi.encodePacked(Enum.Operation.Call, address(safe), uint256(0), dispatchTx.length, dispatchTx)
                 )
             ),
             Enum.Operation.DelegateCall,

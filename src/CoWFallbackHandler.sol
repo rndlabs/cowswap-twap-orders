@@ -52,10 +52,12 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// 1. Try to verify the order using the smart order logic.
     /// 2. If the order verification fails, try to verify the signature using the
     ///    chained fallback handler.
-    function isValidSignature(
-        bytes32 _dataHash,
-        bytes calldata _signature
-    ) public view override returns (bytes4 magicValue) {
+    function isValidSignature(bytes32 _dataHash, bytes calldata _signature)
+        public
+        view
+        override
+        returns (bytes4 magicValue)
+    {
         /// @dev Only attempt to decode signatures of the expected length.
         ///      If not a pre-signed message, then try to verify the order.
         if (_signature.length == CONDITIONAL_ORDER_BYTES_LENGTH() && verifyOrder(_dataHash, _signature)) {
@@ -71,12 +73,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// the smart order logic.
     /// @param _signature Any arbitrary data passed in to validate the order.
     /// @return A boolean indicating whether the signature is valid.
-    function verifyOrder(bytes32, bytes memory _signature)
-        internal
-        view
-        virtual
-        returns (bool) 
-    {
+    function verifyOrder(bytes32, bytes memory _signature) internal view virtual returns (bool) {
         (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(_signature);
         if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
             return false;
@@ -94,10 +91,12 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @param domainSeparator The domain separator of the Safe
     /// @param hash The hash of the order
     /// @return True if the order has been signed by the Safe
-    function isSignedConditionalOrder(GnosisSafe safe, bytes32 domainSeparator, bytes32 hash) internal view returns (bool) {
-        return safe.signedMessages(
-            getMessageHashForSafe(domainSeparator, abi.encode(hash))
-        ) != 0;
+    function isSignedConditionalOrder(GnosisSafe safe, bytes32 domainSeparator, bytes32 hash)
+        internal
+        view
+        returns (bool)
+    {
+        return safe.signedMessages(getMessageHashForSafe(domainSeparator, abi.encode(hash))) != 0;
     }
 
     /// @dev Returns true if the order has been cancelled by the Safe
@@ -105,11 +104,14 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @param domainSeparator The domain separator of the Safe
     /// @param hash The hash of the order
     /// @return True if the order has been cancelled by the Safe
-    function isCancelledConditionalOrder(GnosisSafe safe, bytes32 domainSeparator, bytes32 hash) internal view returns (bool) {
+    function isCancelledConditionalOrder(GnosisSafe safe, bytes32 domainSeparator, bytes32 hash)
+        internal
+        view
+        returns (bool)
+    {
         return safe.signedMessages(
             getMessageHashForSafe(
-                domainSeparator, 
-                abi.encode(ConditionalOrderLib.hashCancel(hash, SETTLEMENT_DOMAIN_SEPARATOR))
+                domainSeparator, abi.encode(ConditionalOrderLib.hashCancel(hash, SETTLEMENT_DOMAIN_SEPARATOR))
             )
         ) != 0;
     }

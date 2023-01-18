@@ -8,7 +8,6 @@ struct TestAccount {
     uint256 pk;
 }
 
-/// @title 
 library TestAccountLib {
     Vm constant vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
