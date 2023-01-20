@@ -42,11 +42,12 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     }
 
     /// @inheritdoc CoWFallbackHandler
-    /// @dev This function verifies that the order hash provided in the signature
-    /// matches the hash of an order that is part of the TWAP bundle. The TWAP bundle is
-    /// decoded from the signature and the order is extracted from the bundle.
-    /// @param _signature An ABI-encoded TWAP bundle.
-    function verifyTrade(bytes32 _hash, bytes memory _signature)
+    /// @dev This function verifies that the `GPv2Order` hash provided in the signature
+    /// matches the hash of a `GPv2Order` that is part of the TWAP order. The TWAP order is
+    /// decoded from the signature and the `GPv2Order` is extracted from the resultant TWAP 
+    /// order.
+    /// @param payload An ABI-encoded TWAP bundle.
+    function verifyTrade(bytes32 hash, bytes memory payload)
         internal
         view
         override(CoWFallbackHandler)
@@ -54,15 +55,15 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     {
         /// @dev This will return `false` if the order isn't signed (ie. not a real order).
         /// If the order is signed, we will `revert` if the order is cancelled.
-        if (!super.verifyTrade(_hash, _signature)) {
+        if (!super.verifyTrade(hash, payload)) {
             return false;
         }
 
         /// @dev Get the part of the TWAP bundle after decoding it.
-        GPv2Order.Data memory order = TWAPOrder.orderFor(abi.decode(_signature, (TWAPOrder.Data)));
+        GPv2Order.Data memory order = TWAPOrder.orderFor(abi.decode(payload, (TWAPOrder.Data)));
 
         /// @dev The derived order hash must match the order hash provided to `isValidSignature`.
-        return GPv2Order.hash(order, SETTLEMENT_DOMAIN_SEPARATOR) == _hash;
+        return GPv2Order.hash(order, SETTLEMENT_DOMAIN_SEPARATOR) == hash;
     }
 
     /// @inheritdoc CoWFallbackHandler

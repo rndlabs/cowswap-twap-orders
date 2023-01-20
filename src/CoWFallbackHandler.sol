@@ -70,11 +70,11 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @dev An internal function that is overriden by the child contract when implementing
-    /// the smart order logic.
-    /// @param _signature Any arbitrary data passed in to validate the order.
-    /// @return A boolean indicating whether the signature is valid.
-    function verifyTrade(bytes32, bytes memory _signature) internal view virtual returns (bool) {
-        (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(_signature);
+    /// the conditional order logic.
+    /// @param payload Any arbitrary data passed in to validate the order.
+    /// @return A boolean indicating whether the order is valid.
+    function verifyTrade(bytes32, bytes memory payload) internal view virtual returns (bool) {
+        (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(payload);
         if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
             return false;
         }
