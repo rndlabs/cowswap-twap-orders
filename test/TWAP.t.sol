@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
+import {SafeCast} from "@openzeppelin/utils/math/SafeCast.sol";
 import {IERC165} from "safe/interfaces/IERC165.sol";
 import {ERC721TokenReceiver} from "safe/interfaces/ERC721TokenReceiver.sol";
 import {ERC777TokensRecipient} from "safe/interfaces/ERC777TokensRecipient.sol";
@@ -16,10 +17,14 @@ import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
 import "./Base.t.sol";
 
-uint256 constant SELL_AMOUNT = 1000e18;
+uint256 constant SELL_AMOUNT = 24000e18;
 uint256 constant LIMIT_PRICE = 100e18;
+uint32 constant FREQUENCY = 1 hours;
+uint32 constant NUM_PARTS = 24;
 
 contract CoWTWAP is Base {
+    using SafeCast for uint256;
+
     event ConditionalOrderCreated(address indexed, bytes);
 
     CoWTWAPFallbackHandler twapSingleton;
@@ -365,9 +370,9 @@ contract CoWTWAP is Base {
             buyToken: token1,
             receiver: address(0), // the safe itself
             totalSellAmount: SELL_AMOUNT,
-            maxPartLimit: LIMIT_PRICE,
-            t0: startTime,
-            n: 24,
+            minPartLimit: LIMIT_PRICE,
+            t0: startTime.toUint32(),
+            n: NUM_PARTS,
             t: 1 hours,
             span: 5 minutes
         });
