@@ -308,6 +308,13 @@ contract CoWTWAP is Base {
         // the number of fills should be equal to the number of parts
         assertTrue(totalFills == noSpanBundle.n);
     }
+
+    /// @dev Fuzz test `calculateValidTo` function
+    /// @param currentTime The current time
+    /// @param startTime The start time of the TWAP order
+    /// @param numParts The number of parts in the TWAP order
+    /// @param frequency The frequency of the TWAP order
+    /// @param span The span of the TWAP order
     function testCalculateValidTo(
         uint256 currentTime,
         uint256 startTime,
