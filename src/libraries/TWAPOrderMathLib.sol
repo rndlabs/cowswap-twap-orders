@@ -30,25 +30,31 @@ library TWAPOrderMathLib {
         assert(frequency > 0 && frequency <= 365 days);
         assert(span <= frequency);
 
-        /// @dev Order is not valid before the start (order commences at `t0`).
-        if (!(startTime <= currentTime)) revert ConditionalOrder.OrderNotValid();
-        /// @dev Order is expired after the last part (`n` parts, running at `t` time length).
-        if (!(currentTime < startTime + (numParts * frequency))) revert ConditionalOrder.OrderExpired();
-
-        // Get the TWAP order part number (indexed from 0)
-        uint256 part;
         unchecked {
-            part = (currentTime - startTime) / frequency;
-        }
-        // The part number MUST be less than the total number of parts (`n`)
-        assert(part < numParts);
-        // calculate the `validTo` timestamp (inclusive as per `GPv2Order`)
-        unchecked {
-            validTo = (span == 0 ? startTime + ((part + 1) * frequency) : startTime + (part * frequency) + span) - 1;
-        }
+            /// @dev Order is not valid before the start (order commences at `t0`).
+            if (!(startTime <= currentTime)) revert ConditionalOrder.OrderNotValid();
+            /// @dev Order is expired after the last part (`n` parts, running at `t` time length).
+            ///      As `startTime` is bounded by `currentTime` which is bounded by `block.timestamp`
+            ///      we can safely add the `numParts * frequency` without risk of overflow.
+            if (!(currentTime < startTime + (numParts * frequency))) revert ConditionalOrder.OrderExpired();
 
-        /// @dev Order is not valid if not within nominated span
-        if (!(currentTime <= validTo)) revert ConditionalOrder.OrderNotValid();
+            /// @dev We use integer division to get the part number as we want to round down to the nearest part.
+            ///      This is safe as we have already checked that `currentTime` < `startTime + (numParts * frequency)`.
+            ///      Due to this check, we know that the part number will always be less than the total number of parts.
+            uint256 part = (currentTime - startTime) / frequency;
+            // calculate the `validTo` timestamp (inclusive as per `GPv2Order`)
+            if (span == 0) {
+                /// @dev If the span is zero, then the order is valid for the entire part.
+                ///      We can safely add `part + 1` to `part` as we know that `part` is less than `numParts`.
+                return startTime + ((part + 1) * frequency) - 1;
+            }
+
+            /// @dev If the span is non-zero, then the order is valid for the span of the part.
+            validTo = startTime + (part * frequency) + span - 1;
+
+            /// @dev Order is not valid if not within nominated span
+            if (!(currentTime <= validTo)) revert ConditionalOrder.OrderNotValid();
+        }
     }
 
     /// @dev Calculate the part limit for a TWAP order.
