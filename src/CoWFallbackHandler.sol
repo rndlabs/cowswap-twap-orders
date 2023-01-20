@@ -60,7 +60,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     {
         /// @dev Only attempt to decode signatures of the expected length.
         ///      If not a pre-signed message, then try to verify the order.
-        if (_signature.length == CONDITIONAL_ORDER_BYTES_LENGTH() && verifyOrder(_dataHash, _signature)) {
+        if (_signature.length == CONDITIONAL_ORDER_BYTES_LENGTH() && verifyTrade(_dataHash, _signature)) {
             return UPDATED_MAGIC_VALUE;
         }
 
@@ -73,7 +73,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// the smart order logic.
     /// @param _signature Any arbitrary data passed in to validate the order.
     /// @return A boolean indicating whether the signature is valid.
-    function verifyOrder(bytes32, bytes memory _signature) internal view virtual returns (bool) {
+    function verifyTrade(bytes32, bytes memory _signature) internal view virtual returns (bool) {
         (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(_signature);
         if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
             return false;

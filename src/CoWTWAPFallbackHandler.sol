@@ -46,7 +46,7 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     /// matches the hash of an order that is part of the TWAP bundle. The TWAP bundle is
     /// decoded from the signature and the order is extracted from the bundle.
     /// @param _signature An ABI-encoded TWAP bundle.
-    function verifyOrder(bytes32 _hash, bytes memory _signature)
+    function verifyTrade(bytes32 _hash, bytes memory _signature)
         internal
         view
         override(CoWFallbackHandler)
@@ -54,7 +54,7 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     {
         /// @dev This will return `false` if the order isn't signed (ie. not a real order).
         /// If the order is signed, we will `revert` if the order is cancelled.
-        if (!super.verifyOrder(_hash, _signature)) {
+        if (!super.verifyTrade(_hash, _signature)) {
             return false;
         }
 
