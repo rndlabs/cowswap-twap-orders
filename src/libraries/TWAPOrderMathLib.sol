@@ -67,7 +67,7 @@ library TWAPOrderMathLib {
         uint256 totalSellAmount,
         uint256 numParts,
         uint256 maxPartLimit,
-        uint256 decimals
+        uint8 decimals
     ) internal pure returns (uint256 partLimit) {
         /// @dev Use `assert` to check for invalid inputs as these should be caught by the
         /// conditional order validation logic in `dispatch` before calling this function.
@@ -82,17 +82,6 @@ library TWAPOrderMathLib {
         ///      A limit price of of 1500 DAI/WETH means we do not want to pay more than 1500 DAI for 1 WETH.
         ///      Therefore in each part, we require a minimum of 10,000 / 1500 = 6.666666666666666666 WETH.
         ///      Thus the partLimit is 6.666666666666666666 * 10^18 = 6666666666666666666.
-        partLimit = (totalSellAmount / numParts) * pow(10, decimals) / maxPartLimit;
-    }
-
-    /// @dev Calculate x ** n. This is required as the SMTChecker does not support exponentiation.
-    /// @param x The base
-    /// @param n The exponent
-    function pow(uint256 x, uint256 n) internal pure returns (uint256) {
-        uint256 result = 1;
-        for (uint256 i = 0; i < n; i++) {
-            result *= x;
-        }
-        return result;
+        partLimit = (totalSellAmount / numParts) * (10 ** decimals) / maxPartLimit;
     }
 }
