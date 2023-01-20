@@ -210,20 +210,24 @@ contract CoWTWAP is Base {
         twapSafe.getTradeableOrder(defaultBundleBytes);
     }
 
-    /// @dev Simulate the TWAP order by iterating over every block and checking
+    /// @dev Simulate the TWAP order by iterating over every second and checking
     ///      that the number of parts is correct.
     function testSimulateTWAP() public {
-        uint256 totalFills = 0;
+        uint256 totalFills;
+        uint256 numSecondsProcessed;
+
         vm.warp(defaultBundle.t0);
 
         while (true) {
             try twapSafe.getTradeableOrder(defaultBundleBytes) returns (GPv2Order.Data memory order) {
                 bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
-                if (orderFills[orderDigest] == 0) {
+                if (orderFills[orderDigest] == 0 && twapSafe.isValidSignature(orderDigest, defaultBundleBytes) == 0x1626ba7e) {
                     orderFills[orderDigest] = 1;
                     totalFills++;
-                    console.logBytes32(orderDigest);
                 }
+
+                // only count this second if we didn't revert
+                numSecondsProcessed++;
             } catch (bytes memory lowLevelData) {
                 bytes4 desiredSelector = bytes4(keccak256(bytes("OrderExpired()")));
                 bytes4 receivedSelector = bytes4(lowLevelData);
@@ -234,10 +238,71 @@ contract CoWTWAP is Base {
             vm.warp(block.timestamp + 1 seconds);
         }
 
+        // the timestamp should be equal to the end time of the TWAP order
+        assertTrue(block.timestamp == defaultBundle.t0 + defaultBundle.n * defaultBundle.t);
+        // the number of seconds processed should be equal to the number of
+        // parts times span (if span is not 0)
+        assertTrue(numSecondsProcessed == defaultBundle.n * defaultBundle.span);
+        // the number of fills should be equal to the number of parts
         assertTrue(totalFills == defaultBundle.n);
     }
 
+    /// @dev Simulate the TWAP order with a span of 0
+    function testSimulateTWAPNoSpan() public {
+        TWAPOrder.Data memory noSpanBundle = _twapTestBundle(block.timestamp + 10 days);
+        noSpanBundle.n = NUM_PARTS / 2;
+        noSpanBundle.t = FREQUENCY / 2;
+        noSpanBundle.span = 0;
+        bytes memory noSpanBundleBytes = abi.encode(noSpanBundle);
 
+        // create the TWAP order
+        createOrder(
+            GnosisSafe(payable(address(twapSafe))),
+            noSpanBundleBytes,
+            noSpanBundle.sellToken,
+            noSpanBundle.totalSellAmount
+        );
+
+        uint256 totalFills;
+        uint256 numSecondsProcessed;
+
+        vm.warp(noSpanBundle.t0);
+
+        while (true) {
+            try twapSafe.getTradeableOrder(noSpanBundleBytes) returns (GPv2Order.Data memory order) {
+                bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
+                if (orderFills[orderDigest] == 0 && twapSafe.isValidSignature(orderDigest, noSpanBundleBytes) == 0x1626ba7e) {
+                    orderFills[orderDigest] = 1;
+                    totalFills++;
+                }
+                // only count this second if we didn't revert
+                numSecondsProcessed++;
+            } catch (bytes memory lowLevelData) {
+                bytes4 failedSelected = bytes4(keccak256(bytes("OrderNotValid()")));
+                bytes4 desiredSelector = bytes4(keccak256(bytes("OrderExpired()")));
+                bytes4 receivedSelector = bytes4(lowLevelData);
+
+                // The order should always be valid because there is no span
+                if (receivedSelector == failedSelected) {
+                    revert("OrderNotValid() should not be thrown");
+                }
+
+                // The order should expire after the last period
+                if (receivedSelector == desiredSelector) {
+                    break;
+                }
+                revert();
+            }
+            vm.warp(block.timestamp + 1 seconds);
+        }
+        // the timestamp should be equal to the end time of the TWAP order
+        assertTrue(block.timestamp == noSpanBundle.t0 + noSpanBundle.n * noSpanBundle.t);
+        // the number of seconds processed should be equal to the number of
+        // parts times span (if span is not 0)
+        assertTrue(numSecondsProcessed == noSpanBundle.n * noSpanBundle.t);
+        // the number of fills should be equal to the number of parts
+        assertTrue(totalFills == noSpanBundle.n);
+    }
     function testCalculateValidTo(
         uint256 currentTime,
         uint256 startTime,
