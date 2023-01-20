@@ -11,6 +11,7 @@ import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
+import {TWAPOrderMathLib} from "../src/libraries/TWAPOrderMathLib.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
 import "./Base.t.sol";
@@ -236,6 +237,62 @@ contract CoWTWAP is Base {
         assertTrue(totalFills == defaultBundle.n);
     }
 
+
+    function testCalculateValidTo(
+        uint256 currentTime,
+        uint256 startTime,
+        uint256 numParts,
+        uint256 frequency,
+        uint256 span
+    ) public {
+        // --- Implicit assumptions
+        // currentTime is always set to the current block timestamp in the TWAP order, so we can assume that it is less 
+        // than the max uint32 value.
+        vm.assume(currentTime <= type(uint32).max);
+
+        // --- Assertions
+        // number of parts is asserted to be less than the max uint32 value in the TWAP order, so we can assume that it is
+        // less than the max uint32 value.
+        numParts = bound(numParts, 2, type(uint32).max);
+
+        // frequency is asserted to be less than 365 days worth of seconds in the TWAP order, and at least 1 second
+        vm.assume(frequency >= 1 && frequency <= 365 days);
+
+        // The span is defined as the number of seconds that the TWAP order is valid for within each period. If the span
+        // is 0, then the TWAP order is valid for the entire period. We can assume that the span is less than or equal
+        // to the frequency.
+        vm.assume(span <= frequency);
+
+        // --- In-function revert conditions
+        // We only calculate `validTo` if we are within the TWAP order's time window, so we can assume that the current
+        // time is greater than or equal to the start time.
+        vm.assume(currentTime >= startTime);
+
+        // The TWAP order is deemed expired if the current time is greater than the end time of the last part. We can
+        // assume that the current time is less than the end time of the TWAP order.
+        vm.assume(currentTime < startTime + (numParts * frequency));
+
+        uint256 part = (currentTime - startTime) / frequency;
+
+        // The TWAP order is only valid for the span within each period, so we can assume that the current time is less
+        // than the end time of the current part.
+        vm.assume(currentTime < startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0));
+
+        uint256 validTo = TWAPOrderMathLib.calculateValidTo(
+            currentTime,
+            startTime,
+            numParts,
+            frequency,
+            span
+        );
+
+        uint256 expectedValidTo =  startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0) - 1;
+
+        // `validTo` MUST be now or in the future.
+        assertTrue(validTo >= currentTime);
+        // `validTo` MUST be equal to this.
+        assertTrue(validTo == expectedValidTo);
+    }
 
     function _twapTestBundle(uint256 startTime) internal view returns (TWAPOrder.Data memory) {
         return TWAPOrder.Data({
