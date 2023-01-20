@@ -52,7 +52,7 @@ library TWAPOrder {
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
         // Check the order is valid (returning a `validTo` if so)
         uint256 validTo = TWAPOrderMathLib.calculateValidTo(
-            block.timestamp.toUint32(),
+            block.timestamp,
             self.t0,
             self.n,
             self.t,
