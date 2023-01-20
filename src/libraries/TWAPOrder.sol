@@ -22,11 +22,11 @@ library TWAPOrder {
         IERC20 buyToken;
         address receiver;
         uint256 totalSellAmount; // total amount of sellToken to sell
-        uint256 maxPartLimit; // max price to pay for a unit of buyToken denominated in sellToken
-        uint32 t0;
-        uint32 n;
-        uint32 t;
-        uint32 span;
+        uint256 minPartLimit; // max price to pay for a unit of buyToken denominated in sellToken
+        uint256 t0;
+        uint256 n;
+        uint256 t;
+        uint256 span;
     }
 
     /// @dev Update this if the TWAP bundle struct changes (32 * 9).
@@ -59,20 +59,13 @@ library TWAPOrder {
             self.span
         );
 
-        uint256 partLimit = TWAPOrderMathLib.calculatePartLimit(
-            self.totalSellAmount,
-            self.n,
-            self.maxPartLimit,
-            IERC20Metadata(address(self.sellToken)).decimals()
-        );
-
         // return the order
         order = GPv2Order.Data({
             sellToken: self.sellToken,
             buyToken: self.buyToken,
             receiver: self.receiver,
             sellAmount: self.totalSellAmount / self.n,
-            buyAmount: partLimit,
+            buyAmount: self.minPartLimit,
             validTo: validTo.toUint32(),
             appData: APP_DATA,
             feeAmount: 0,

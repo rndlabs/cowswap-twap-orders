@@ -73,7 +73,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// the conditional order logic.
     /// @param payload Any arbitrary data passed in to validate the order.
     /// @return A boolean indicating whether the order is valid.
-    function verifyTrade(bytes32, bytes memory payload) internal view virtual returns (bool) {
+    function verifyTrade(bytes32, bytes calldata payload) internal view virtual returns (bool) {
         (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(payload);
         if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
             return false;
@@ -121,8 +121,14 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @param message Message that should be hashed
     /// @return Message hash.
     function getMessageHashForSafe(bytes32 domainSeparator, bytes memory message) internal pure returns (bytes32) {
-        bytes32 safeMessageHash = keccak256(abi.encode(SAFE_MSG_TYPEHASH, keccak256(message)));
-        return keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, safeMessageHash));
+        return keccak256(
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0x01),
+                domainSeparator,
+                keccak256(abi.encode(SAFE_MSG_TYPEHASH, keccak256(message)))
+            )
+        );
     }
 
     /// @dev Returns the Gnosis Safe, domain separator and hash of the order
@@ -130,8 +136,10 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @return The Gnosis Safe, domain separator and hash of the order
     function safeLookup(bytes memory order) internal view returns (GnosisSafe, bytes32, bytes32) {
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
-        bytes32 domainSeparator = safe.domainSeparator();
-        bytes32 digest = ConditionalOrderLib.hash(order, SETTLEMENT_DOMAIN_SEPARATOR);
-        return (safe, domainSeparator, digest);
+        return (
+            safe,
+            safe.domainSeparator(),
+            ConditionalOrderLib.hash(order, SETTLEMENT_DOMAIN_SEPARATOR)
+        );
     }
 }

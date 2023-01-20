@@ -56,32 +56,4 @@ library TWAPOrderMathLib {
             if (!(currentTime <= validTo)) revert ConditionalOrder.OrderNotValid();
         }
     }
-
-    /// @dev Calculate the part limit for a TWAP order.
-    /// @param totalSellAmount The total amount of sellToken to sell.
-    /// @param numParts The number of parts to split the order into.
-    /// @param maxPartLimit The maximum part limit for the order.
-    /// @param decimals The number of decimals for the sellToken.
-    /// @return partLimit The part limit for the order.
-    function calculatePartLimit(
-        uint256 totalSellAmount,
-        uint256 numParts,
-        uint256 maxPartLimit,
-        uint8 decimals
-    ) internal pure returns (uint256 partLimit) {
-        /// @dev Use `assert` to check for invalid inputs as these should be caught by the
-        /// conditional order validation logic in `dispatch` before calling this function.
-        assert(totalSellAmount % numParts == 0);
-        assert(maxPartLimit > 0);
-        assert(numParts > 0);
-
-        /// @dev We determine the part limit for a TWAP order, which is the maximum
-        /// amount of buyToken that can be bought for a unit of sellToken.
-
-        /// @dev Example we are selling 100,000 DAI in 10 parts for WETH (lots of 10,000 DAI).
-        ///      A limit price of of 1500 DAI/WETH means we do not want to pay more than 1500 DAI for 1 WETH.
-        ///      Therefore in each part, we require a minimum of 10,000 / 1500 = 6.666666666666666666 WETH.
-        ///      Thus the partLimit is 6.666666666666666666 * 10^18 = 6666666666666666666.
-        partLimit = (totalSellAmount / numParts) * (10 ** decimals) / maxPartLimit;
-    }
 }

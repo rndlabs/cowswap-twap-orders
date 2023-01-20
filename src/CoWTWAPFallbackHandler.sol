@@ -41,7 +41,7 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     /// decoded from the signature and the `GPv2Order` is extracted from the resultant TWAP 
     /// order.
     /// @param payload An ABI-encoded TWAP bundle.
-    function verifyTrade(bytes32 hash, bytes memory payload)
+    function verifyTrade(bytes32 hash, bytes calldata payload)
         internal
         view
         override(CoWFallbackHandler)
