@@ -37,6 +37,18 @@ library TWAPOrder {
     /// @dev keccak256("conditionalorder.twap")
     bytes32 private constant APP_DATA = bytes32(0x6a1cb2f57824a1985d4bd2c556f30a048157ee9973efc0a4714604dde0a23104);
 
+    // --- functions
+
+    function validate(Data memory self) internal pure {
+        require(self.sellToken != self.buyToken, "TWAP tokens must be different");
+        require(address(self.sellToken) != address(0) && address(self.buyToken) != address(0), "TWAP tokens must be non-zero");
+        require(self.totalSellAmount % self.n == 0, "TWAP totalSellAmount must be divisible by n");
+        require(self.maxPartLimit > 0, "TWAP maxPartLimit must be greater than 0");
+        require(self.n > 0, "TWAP n must be greater than 0");
+        require(self.t > 0, "TWAP t must be greater than 0");
+        require(self.span <= self.t, "TWAP span must be less than or equal to t");
+    }
+
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
         // Check the order is valid (returning a `validTo` if so)
         uint256 validTo = TWAPOrderMathLib.calculateValidTo(
