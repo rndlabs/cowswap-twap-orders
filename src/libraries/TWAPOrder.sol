@@ -15,6 +15,17 @@ import {TWAPOrderMathLib} from "./TWAPOrderMathLib.sol";
 library TWAPOrder {
     using SafeCast for uint256;
 
+    // --- errors specific to this library
+    
+    error InvalidSameToken();
+    error InvalidToken();
+    error InvalidTotalSellAmountRemainder();
+    error InvalidMaxPartLimit();
+    error InvalidStartTime();
+    error InvalidNumParts();
+    error InvalidFrequency();
+    error InvalidSpan();
+
     // --- structs
 
     struct Data {
@@ -39,14 +50,17 @@ library TWAPOrder {
 
     // --- functions
 
+    /// @dev revert if the order is invalid
+    /// @param self The TWAP order to validate
     function validate(Data memory self) internal pure {
-        require(self.sellToken != self.buyToken, "TWAP tokens must be different");
-        require(address(self.sellToken) != address(0) && address(self.buyToken) != address(0), "TWAP tokens must be non-zero");
-        require(self.totalSellAmount % self.n == 0, "TWAP totalSellAmount must be divisible by n");
-        require(self.maxPartLimit > 0, "TWAP maxPartLimit must be greater than 0");
-        require(self.n > 1, "TWAP n must be greater than 1");
-        require(self.t > 0, "TWAP t must be greater than 0");
-        require(self.span <= self.t, "TWAP span must be less than or equal to t");
+        if (!(self.sellToken != self.buyToken)) revert InvalidSameToken();
+        if (!(address(self.sellToken) != address(0) && address(self.buyToken) != address(0))) revert InvalidToken();
+        if (!(self.totalSellAmount % self.n == 0)) revert InvalidTotalSellAmountRemainder();
+        if (!(self.minPartLimit > 0)) revert InvalidMaxPartLimit();
+        if (!(self.t0 < type(uint32).max)) revert InvalidStartTime();
+        if (!(self.n > 1 && self.n < type(uint32).max)) revert InvalidNumParts();
+        if (!(self.t > 0 && self.t < type(uint32).max)) revert InvalidFrequency();
+        if (!(self.span <= self.t)) revert InvalidSpan();
     }
 
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
