@@ -7,9 +7,6 @@ import {ConditionalOrder} from "../interfaces/ConditionalOrder.sol";
 /// @dev Math is broken out into a library to enable easier unit testing and SMT verification.
 /// @author mfw78 <mfw78@rndlabs.xyz>
 library TWAPOrderMathLib {
-    error TWAPMathSellAmountNotDivisibleByParts();
-    error TWAPPartLimitZero();
-    error TWAPNumPartsZero();
 
     // --- functions
 
@@ -26,8 +23,12 @@ library TWAPOrderMathLib {
         uint32 frequency,
         uint32 span
     ) internal pure returns (uint256 validTo) {
-        /// @dev We determine if the order is requested at a valid time, respecting
-        /// the start time `t0`, the number of parts `n`, and any applicable `span`.
+        /// @dev Use `assert` to check for invalid inputs as these should be caught by the
+        /// conditional order validation logic in `dispatch` before calling this function.
+        /// This is to save on gas deployment costs vs using `require` statements.
+        assert(numParts <= type(uint32).max);
+        assert(frequency > 0 && frequency <= 365 days);
+        assert(span <= frequency);
 
         // Order is not valid before the start (order commences at `t0`).
         if (!(startTime <= currentTime)) revert ConditionalOrder.OrderNotValid();
@@ -62,9 +63,11 @@ library TWAPOrderMathLib {
         uint256 maxPartLimit,
         uint256 decimals
     ) internal pure returns (uint256 partLimit) {
-        if (!(totalSellAmount % numParts == 0)) revert TWAPMathSellAmountNotDivisibleByParts();
-        if (!(maxPartLimit > 0)) revert TWAPPartLimitZero();
-        if (!(numParts > 0)) revert TWAPNumPartsZero();
+        /// @dev Use `assert` to check for invalid inputs as these should be caught by the
+        /// conditional order validation logic in `dispatch` before calling this function.
+        assert(totalSellAmount % numParts == 0);
+        assert(maxPartLimit > 0);
+        assert(numParts > 0);
 
         /// @dev We determine the part limit for a TWAP order, which is the maximum
         /// amount of buyToken that can be bought for a unit of sellToken.
