@@ -15,6 +15,23 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
 
     constructor(GPv2Settlement _settlementContract) CoWFallbackHandler(_settlementContract) {}
 
+    /// @inheritdoc CoWFallbackHandler
+    /// @dev Apply specific TWAP order validation.
+    function dispatch(bytes calldata payload) public override(CoWFallbackHandler) {
+        TWAPOrder.Data memory twap = abi.decode(payload, (TWAPOrder.Data));
+        require(twap.sellToken != twap.buyToken, "TWAP tokens must be different");
+        require(address(twap.sellToken) != address(0) && address(twap.buyToken) != address(0), "TWAP tokens must be non-zero");
+        require(twap.totalSellAmount % twap.n == 0, "TWAP totalSellAmount must be divisible by n");
+        require(twap.maxPartLimit > 0, "TWAP maxPartLimit must be greater than 0");
+        require(twap.t0 >= block.timestamp, "TWAP t0 must be greater than or equal to current block timestamp");
+        require(twap.n > 0, "TWAP n must be greater than 0");
+        require(twap.t > 0, "TWAP t must be greater than 0");
+        require(twap.span <= twap.t, "TWAP span must be less than or equal to t");
+
+        /// @dev This will revert if the order isn't signed or is cancelled.
+        super.dispatch(payload);
+    }
+
     function getTradeableOrder(bytes calldata payload) external view override returns (GPv2Order.Data memory) {
         /// @dev This will revert if the order isn't signed or is cancelled.
         _onlySignedAndNotCancelled(payload);

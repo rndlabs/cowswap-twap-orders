@@ -42,7 +42,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @inheritdoc ConditionalOrder
-    function dispatch(bytes calldata payload) external override {
+    function dispatch(bytes calldata payload) public override virtual {
         _onlySignedAndNotCancelled(payload);
         emit ConditionalOrderCreated(msg.sender, payload);
     }
