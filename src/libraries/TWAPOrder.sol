@@ -44,7 +44,7 @@ library TWAPOrder {
         require(address(self.sellToken) != address(0) && address(self.buyToken) != address(0), "TWAP tokens must be non-zero");
         require(self.totalSellAmount % self.n == 0, "TWAP totalSellAmount must be divisible by n");
         require(self.maxPartLimit > 0, "TWAP maxPartLimit must be greater than 0");
-        require(self.n > 0, "TWAP n must be greater than 0");
+        require(self.n > 1, "TWAP n must be greater than 1");
         require(self.t > 0, "TWAP t must be greater than 0");
         require(self.span <= self.t, "TWAP span must be less than or equal to t");
     }
