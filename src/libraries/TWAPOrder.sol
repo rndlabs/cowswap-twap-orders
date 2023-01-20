@@ -63,8 +63,14 @@ library TWAPOrder {
         if (!(self.span <= self.t)) revert InvalidSpan();
     }
 
+    /// @dev Generate the `GPv2Order` for the current part of the TWAP order.
+    /// @param self The TWAP order to generate the order for.
+    /// @return order The `GPv2Order` for the current part.
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
-        // Check the order is valid (returning a `validTo` if so)
+        // Calculate the `validTo` timestamp for the order. This is unique for each part of the TWAP order.
+        // As `validTo` is unique, there is a corresponding unique `orderUid` for each `GPv2Order`. As
+        // CoWProtocol enforces that each `orderUid` is only used once, this means that each part of the TWAP
+        // order can only be executed once.
         uint256 validTo = TWAPOrderMathLib.calculateValidTo(
             block.timestamp,
             self.t0,
