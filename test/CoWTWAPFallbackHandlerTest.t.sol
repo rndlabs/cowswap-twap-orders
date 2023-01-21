@@ -6,6 +6,7 @@ import {IERC165} from "safe/interfaces/IERC165.sol";
 import {ERC721TokenReceiver} from "safe/interfaces/ERC721TokenReceiver.sol";
 import {ERC777TokensRecipient} from "safe/interfaces/ERC777TokensRecipient.sol";
 import {ERC1155TokenReceiver} from "safe/interfaces/ERC1155TokenReceiver.sol";
+import {CompatibilityFallbackHandler} from "safe/handler/CompatibilityFallbackHandler.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 import {GPv2EIP1271} from "cowprotocol/interfaces/GPv2EIP1271.sol";
@@ -48,6 +49,10 @@ contract CoWTWAP is Base {
         setFallbackHandler(safe1, twapSingleton);
         twapSafeWithOrder = CoWTWAPFallbackHandler(address(safe1));
 
+        // enable the CoW TWAP fallback handler for safe 3
+        setFallbackHandler(safe3, twapSingleton);
+        twapSafe = CoWTWAPFallbackHandler(address(safe3));
+
         // Set a default bundle
         defaultBundle = _twapTestBundle(block.timestamp + 1 days);
         defaultBundleBytes = abi.encode(defaultBundle);
@@ -58,13 +63,34 @@ contract CoWTWAP is Base {
             GnosisSafe(payable(address(twapSafeWithOrder))),
             defaultBundleBytes,
             defaultBundle.sellToken,
-            defaultBundle.partSellAmount
         );
     }
 
-    /// @dev Test that the fallback handler can be set on a Safe and that it
-    /// at least supports the safe interfaces as Compatability fallback handler.
-    function testSetFallbackHandler() public {
+    function test_SetUpState_CoWTWAPFallbackHandler_is_set() public {
+        // check that the fallback handler is set
+        // get the storage at 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5
+        // which is the storage slot of the fallback handler
+        assertEq(
+            vm.load(address(safe1), 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5),
+            bytes32(uint256(uint160(address(twapSingleton))))
+        );
+    }
+
+    /// @dev An end to end test that sets the fallback handler on a Safe and then
+    ///      checks that the fallback handler is set correctly checking expected functionality
+    ///      from Compatability fallback handler.
+    ///      Make use of safe2 to illustrate that the fallback handler can be set on an arbitrary Safe.
+    function test_e2e_setFallbackHandler() public {
+        // Check to make sure that the default fallback handler is set
+        assertEq(
+            vm.load(address(safe2), 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5),
+            bytes32(uint256(uint160(address(handler))))
+        );
+
+        assertTrue(CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(IERC165).interfaceId));
+        assertTrue(CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(ERC721TokenReceiver).interfaceId));
+        assertTrue(CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(ERC1155TokenReceiver).interfaceId));
+
         // set the fallback handler to the CoW TWAP fallback handler
         setFallbackHandler(safe2, twapSingleton);
 
@@ -83,8 +109,13 @@ contract CoWTWAP is Base {
         assertTrue(_safe.supportsInterface(type(ERC1155TokenReceiver).interfaceId));
     }
 
-    /// @dev Test general EIP-1271 functionality
-    function testSafeEIP1271() public {
+    function test_inherited_CompatibilityFallbackHandler_supportsInterface() public {
+        // check some of the standard interfaces that the fallback handler supports
+        assertTrue(twapSafeWithOrder.supportsInterface(type(IERC165).interfaceId));
+    }
+
+    /// @dev Test inherited functionality from CompatibilityFallbackHandler
+    function test_inherited_CompatibilityFallbackHandler_isValidSignature() public {
         // Get a message hash to sign
         bytes32 _msg = keccak256(bytes("Cows are cool"));
         bytes32 msgDigest = twapSafeWithOrder.getMessageHash(abi.encode(_msg));
@@ -100,6 +131,46 @@ contract CoWTWAP is Base {
 
         // Check that the signature is valid
         assertTrue(twapSafeWithOrder.isValidSignature(_msg, sigs) == bytes4(GPv2EIP1271.MAGICVALUE));
+    }
+
+    function test_inherited_CompatibilityFallbackHandler_isValidSignature_RevertWhenNotValidSignature() public {
+        // Get a message hash to sign
+        bytes32 _msg = keccak256(bytes("Cows are cool"));
+        bytes32 msgDigest = twapSafeWithOrder.getMessageHash(abi.encode(_msg));
+
+        // Sign the message
+        TestAccount[] memory signers = signers();
+        bytes[] memory signatures = new bytes[](2);
+        signatures[0] = TestAccountLib.signPacked(signers[0], msgDigest);
+        signatures[1] = TestAccountLib.signPacked(signers[1], msgDigest);
+
+        // concatenate the signatures
+        bytes memory sigs = abi.encodePacked(signatures[0], signatures[1]);
+
+        // Check that the signature is valid
+        assertTrue(twapSafeWithOrder.isValidSignature(_msg, sigs) == bytes4(GPv2EIP1271.MAGICVALUE));
+
+        // Revert when not valid signature because Safe doesn't properly implement EIP1271
+        // ie. it reverts instead of returning != bytes4(GPv2EIP1271.MAGICVALUE)
+        bytes memory invalidSigs = abi.encodePacked(signatures[0], signatures[0]);
+        vm.expectRevert();
+        assertTrue(twapSafeWithOrder.isValidSignature(_msg, invalidSigs) != bytes4(GPv2EIP1271.MAGICVALUE));
+    }
+
+    function test_inherited_CompatibilityFallbackHandler_isValidSignature_RevertOnMalformedTWAP() public {
+        // Generate a malformed TWAP, ie. random bytes of length 288
+        bytes memory malformedTWAP = new bytes(288);
+        for (uint256 i = 0; i < malformedTWAP.length; i++) {
+            malformedTWAP[i] = bytes1(uint8(uint256(keccak256(abi.encodePacked(i))) % 256));
+        }
+
+        // Generate a malformed hash
+        bytes32 malformedHash = keccak256(malformedTWAP);
+
+        // Revert when not valid signature because Safe doesn't properly implement EIP1271
+        // ie. it reverts instead of returning != bytes4(GPv2EIP1271.MAGICVALUE)
+        vm.expectRevert();
+        assertTrue(twapSafeWithOrder.isValidSignature(malformedHash, malformedTWAP) != bytes4(GPv2EIP1271.MAGICVALUE));
     }
 
     /// @dev Test creating a TWAP order (event emission)
