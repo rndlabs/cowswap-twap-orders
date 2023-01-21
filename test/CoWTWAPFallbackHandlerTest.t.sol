@@ -63,6 +63,7 @@ contract CoWTWAP is Base {
             GnosisSafe(payable(address(twapSafeWithOrder))),
             defaultBundleBytes,
             defaultBundle.sellToken,
+            defaultBundle.partSellAmount * defaultBundle.n
         );
     }
 
@@ -191,11 +192,11 @@ contract CoWTWAP is Base {
         emit ConditionalOrderCreated(address(_twapSafe), orderBytes);
 
         // Everything here happens in a batch
-        createOrder(GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.partSellAmount);
+        createOrder(GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
 
         // Check that the order signed by the safe.
         bytes32 orderDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
-        assertTrue(_twapSafe.isValidSignature(orderDigest, "") == bytes4(0x1626ba7e));
+        assertTrue(_twapSafe.isValidSignature(orderDigest, "") == bytes4(GPv2EIP1271.MAGICVALUE));
 
         // Check that the order is not cancelled
         bytes32 cancelDigest = ConditionalOrderLib.hashCancel(orderDigest, settlement.domainSeparator());
@@ -341,7 +342,7 @@ contract CoWTWAP is Base {
             GnosisSafe(payable(address(twapSafeWithOrder))),
             noSpanBundleBytes,
             noSpanBundle.sellToken,
-            noSpanBundle.partSellAmount
+            noSpanBundle.partSellAmount * noSpanBundle.n
         );
 
         uint256 totalFills;
