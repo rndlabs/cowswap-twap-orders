@@ -362,7 +362,10 @@ contract CoWTWAP is Base {
         // than the end time of the current part.
         vm.assume(currentTime < startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0));
 
-        uint256 validTo = TWAPOrderMathLib.calculateValidTo(currentTime, startTime, numParts, frequency, span);
+        // --- Warp to the current time
+        vm.warp(currentTime);
+
+        uint256 validTo = TWAPOrderMathLib.calculateValidTo(startTime, numParts, frequency, span);
 
         uint256 expectedValidTo = startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0) - 1;
 
