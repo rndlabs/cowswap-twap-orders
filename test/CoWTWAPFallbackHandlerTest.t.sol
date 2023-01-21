@@ -346,43 +346,59 @@ contract CoWTWAP is Base {
         twapSafe.getTradeableOrder(orderBytes);
     }
 
-    function test_getTradeableOrder_RevertIfBeforeStart() public {
+    function test_getTradeableOrder_FuzzRevertIfBeforeStart(uint256 startTime, uint256 currentTime) public {
+        // guard against overflows
+        vm.assume(startTime < type(uint32).max);
+        // force revert before start
+        vm.assume(currentTime < startTime);
+
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        TWAPOrder.Data memory order = _twapTestBundle(startTime);
         bytes memory orderBytes = abi.encode(order);
 
         // Create the order - this signs the order and marks it a valid
         createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
 
+        // Warp to start time to make sure the order is valid
+        vm.warp(startTime);
+
         // Verify that the order is valid - this shouldn't revert
         twapSafe.getTradeableOrder(orderBytes);
 
-        // Warp to before t0
-        vm.warp(order.t0 - 1);
+        // Warp to current time
+        vm.warp(currentTime);
 
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
         twapSafe.getTradeableOrder(orderBytes);
     }
 
-    function test_getTradeableOrder_RevertIfExpired() public {
+    function test_getTradeableOrder_FuzzRevertIfExpired(uint256 startTime, uint256 currentTime) public {
+        // guard against overflows
+        vm.assume(startTime < type(uint32).max);
+        // force revert after expiry
+        vm.assume(currentTime >= startTime + (FREQUENCY * NUM_PARTS));
+
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        TWAPOrder.Data memory order = _twapTestBundle(startTime);
         bytes memory orderBytes = abi.encode(order);
 
         // Create the order - this signs the order and marks it a valid
         createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
 
+        // Warp to start time to make sure the order is valid
+        vm.warp(startTime);
+
         // Verify that the order is valid - this shouldn't revert
         twapSafe.getTradeableOrder(orderBytes);
 
         // Warp to expiry
-        vm.warp(order.t0 + (order.n * order.t));
+        vm.warp(currentTime);
 
         vm.expectRevert(ConditionalOrder.OrderExpired.selector);
         twapSafe.getTradeableOrder(orderBytes);
     }
 
-    function test_getTradeableOrder_FuzzRevertIfNotWithinSpan(uint256 startTime, uint256 currentTime) public {
+    function test_getTradeableOrder_FuzzRevertIfOutsideSpan(uint256 startTime, uint256 currentTime) public {
         // guard against overflows
         vm.assume(startTime < type(uint32).max);
         vm.assume(currentTime < type(uint32).max);
