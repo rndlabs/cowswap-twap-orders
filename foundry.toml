@@ -6,6 +6,11 @@ libs = ['lib']
 optimizer = true
 optimizer_runs = 200
 
+ignore = [
+    'src/vendored/CompatibilityFallbackHandler.sol',
+    'src/vendored/ISignatureValidator.sol'
+]
+
 [profile.default.model_checker]
 contracts = { 'src/libraries/TWAPOrderMathLib.sol' = [ 'TWAPOrderMathLib' ] }
 engine = 'chc'
