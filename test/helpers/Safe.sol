@@ -19,7 +19,7 @@ abstract contract Safe {
 
     GnosisSafe public singleton;
     GnosisSafeProxyFactory public factory;
-    CompatibilityFallbackHandler private handler;
+    CompatibilityFallbackHandler public handler;
     MultiSend public multisend;
     SignMessageLib public signMessageLib;
 
@@ -42,7 +42,7 @@ abstract contract Safe {
             factory.createProxyWithNonce(
                 address(singleton),
                 abi.encodeWithSelector(
-                    GnosisSafe.setup.selector, owners, threshold, address(0), "", address(0), address(0), 0, address(0)
+                    GnosisSafe.setup.selector, owners, threshold, address(0), "", handler, address(0), 0, address(0)
                 ),
                 nonce // nonce
             )
