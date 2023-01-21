@@ -709,7 +709,7 @@ contract CoWTWAP is Base {
     /// @param numParts The number of parts in the TWAP order
     /// @param frequency The frequency of the TWAP order
     /// @param span The span of the TWAP order
-    function testCalculateValidTo(
+    function test_calculateValidTo(
         uint256 currentTime,
         uint256 startTime,
         uint256 numParts,
