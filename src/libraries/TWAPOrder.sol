@@ -20,7 +20,7 @@ library TWAPOrder {
     error InvalidSameToken();
     error InvalidToken();
     error InvalidPartSellAmount();
-    error InvalidMaxPartLimit();
+    error InvalidMinPartLimit();
     error InvalidStartTime();
     error InvalidNumParts();
     error InvalidFrequency();
@@ -56,7 +56,7 @@ library TWAPOrder {
         if (!(self.sellToken != self.buyToken)) revert InvalidSameToken();
         if (!(address(self.sellToken) != address(0) && address(self.buyToken) != address(0))) revert InvalidToken();
         if (!(self.partSellAmount > 0)) revert InvalidPartSellAmount();
-        if (!(self.minPartLimit > 0)) revert InvalidMaxPartLimit();
+        if (!(self.minPartLimit > 0)) revert InvalidMinPartLimit();
         if (!(self.t0 < type(uint32).max)) revert InvalidStartTime();
         if (!(self.n > 1 && self.n < type(uint32).max)) revert InvalidNumParts();
         if (!(self.t > 0 && self.t < type(uint32).max)) revert InvalidFrequency();
