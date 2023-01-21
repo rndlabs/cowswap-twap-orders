@@ -23,9 +23,9 @@ uint256 constant SELL_AMOUNT = 24000e18;
 uint256 constant LIMIT_PRICE = 100e18;
 uint32 constant FREQUENCY = 1 hours;
 uint32 constant NUM_PARTS = 24;
+uint32 constant SPAN = 5 minutes;
 
 contract CoWTWAP is Base {
-    using SafeCast for uint256;
 
     event ConditionalOrderCreated(address indexed, bytes);
 
@@ -81,7 +81,7 @@ contract CoWTWAP is Base {
     ///      checks that the fallback handler is set correctly checking expected functionality
     ///      from Compatability fallback handler.
     ///      Make use of safe2 to illustrate that the fallback handler can be set on an arbitrary Safe.
-    function test_e2e_setFallbackHandler() public {
+    function test_setFallbackHandler_e2e() public {
         // Check to make sure that the default fallback handler is set
         assertEq(
             vm.load(address(safe2), 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5),
@@ -174,11 +174,124 @@ contract CoWTWAP is Base {
         assertTrue(twapSafeWithOrder.isValidSignature(malformedHash, malformedTWAP) != bytes4(GPv2EIP1271.MAGICVALUE));
     }
 
+    function test_dispatch_RevertOnSameTokens() public {
+        // Revert when the same token is used for both the buy and sell token
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.sellToken = token0;
+        twapOrder.buyToken = token0;
+
+        vm.expectRevert(TWAPOrder.InvalidSameToken.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_RevertOnTokenZero() public {
+        // Revert when either the buy or sell token is address(0)
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.sellToken = IERC20(address(0));
+
+        vm.expectRevert(TWAPOrder.InvalidToken.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+
+        twapOrder.sellToken = token0;
+        twapOrder.buyToken = IERC20(address(0));
+
+        vm.expectRevert(TWAPOrder.InvalidToken.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_RevertOnZeroPartSellAmount() public {
+        // Revert when the sell amount is zero
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.partSellAmount = 0;
+
+        vm.expectRevert(TWAPOrder.InvalidPartSellAmount.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_RevertOnZeroMinPartLimit() public {
+        // Revert when the limit is zero
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.minPartLimit = 0;
+
+        vm.expectRevert(TWAPOrder.InvalidMinPartLimit.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_FuzzRevertOnInvalidStartTime(uint256 startTime) public {
+        vm.assume(startTime >= type(uint32).max);
+        // Revert when the start time exceeds or equals the max uint32
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(startTime);
+        twapOrder.t0 = startTime;
+
+        vm.expectRevert(TWAPOrder.InvalidStartTime.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_FuzzRevertOnInvalidNumParts(uint256 numParts) public {
+        vm.assume(numParts < 2 || numParts >= type(uint32).max);
+        // Revert if not an actual TWAP (ie. numParts < 2)
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.n = numParts;
+
+        vm.expectRevert(TWAPOrder.InvalidNumParts.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_FuzzRevertOnInvalidFrequency(uint256 frequency) public {
+        vm.assume(frequency < 1 || frequency >= type(uint32).max);
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.t = frequency;
+
+        vm.expectRevert(TWAPOrder.InvalidFrequency.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_FuzzRevertOnInvalidSpan(uint256 frequency, uint256 span) public {
+        vm.assume(frequency > 0 && frequency < type(uint32).max);
+        vm.assume(span > frequency);
+
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        twapOrder.t = frequency;
+        twapOrder.span = span;
+
+        vm.expectRevert(TWAPOrder.InvalidSpan.selector);
+        twapSafe.dispatch(abi.encode(twapOrder));
+    }
+
+    function test_dispatch_RevertOnOrderNotSigned() public {
+        // Revert when the order is not signed by the safe
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(twapOrder);
+
+        vm.expectRevert(ConditionalOrder.OrderNotSigned.selector);
+        twapSafe.dispatch(orderBytes);
+    }
+
+    function test_dispatch_RevertOnOrderSignedAndCancelled() public {
+        // Revert when the order is signed by the safe and cancelled
+        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(order);
+
+        // Create the order - this signs the order and marks it a valid
+        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+
+        // Verify that the order is valid - this shouldn't revert
+        twapSafe.getTradeableOrder(orderBytes);
+
+        // Cancel the *TWAP order*
+        bytes32 twapDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        bytes32 cancelDigest = ConditionalOrderLib.hashCancel(twapDigest, settlement.domainSeparator());
+        safeSignMessage(GnosisSafe(payable(address(twapSafe))), abi.encode(cancelDigest));
+
+        vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
+        twapSafe.dispatch(orderBytes);
+    }
+
     /// @dev Test creating a TWAP order (event emission)
     ///      A valid order has the following properties:
     ///      - The order is signed by the safe
     ///      - The order is not cancelled
-    function testCreateTWAPOrder() public {
+    function test_dispatch_e2e() public {
         /// @dev We use a new Safe for this test to illustrate that the fallback
         /// handler can be set on an arbitrary Safe.
         setFallbackHandler(safe2, twapSingleton);
@@ -202,6 +315,127 @@ contract CoWTWAP is Base {
         bytes32 cancelDigest = ConditionalOrderLib.hashCancel(orderDigest, settlement.domainSeparator());
         vm.expectRevert(bytes("Hash not approved"));
         _twapSafe.isValidSignature(cancelDigest, "");
+    }
+
+    function test_getTradeableOrder_RevertOnOrderNotSigned() public {
+        // Revert when the order is not signed by the safe
+        TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(twapOrder);
+
+        vm.expectRevert(ConditionalOrder.OrderNotSigned.selector);
+        twapSafe.getTradeableOrder(orderBytes);
+    }
+
+    function test_getTradeableOrder_RevertOnOrderSignedAndCancelled() public {
+        // Revert when the order is signed by the safe and cancelled
+        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(order);
+
+        // Create the order - this signs the order and marks it a valid
+        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+
+        // Verify that the order is valid - this shouldn't revert
+        twapSafe.getTradeableOrder(orderBytes);
+
+        // Cancel the *TWAP order*
+        bytes32 twapDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        bytes32 cancelDigest = ConditionalOrderLib.hashCancel(twapDigest, settlement.domainSeparator());
+        safeSignMessage(GnosisSafe(payable(address(twapSafe))), abi.encode(cancelDigest));
+
+        vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
+        twapSafe.getTradeableOrder(orderBytes);
+    }
+
+    function test_getTradeableOrder_RevertIfBeforeStart() public {
+        // Revert when the order is signed by the safe and cancelled
+        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(order);
+
+        // Create the order - this signs the order and marks it a valid
+        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+
+        // Verify that the order is valid - this shouldn't revert
+        twapSafe.getTradeableOrder(orderBytes);
+
+        // Warp to before t0
+        vm.warp(order.t0 - 1);
+
+        vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
+        twapSafe.getTradeableOrder(orderBytes);
+    }
+
+    function test_getTradeableOrder_RevertIfExpired() public {
+        // Revert when the order is signed by the safe and cancelled
+        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
+        bytes memory orderBytes = abi.encode(order);
+
+        // Create the order - this signs the order and marks it a valid
+        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+
+        // Verify that the order is valid - this shouldn't revert
+        twapSafe.getTradeableOrder(orderBytes);
+
+        // Warp to expiry
+        vm.warp(order.t0 + (order.n * order.t));
+
+        vm.expectRevert(ConditionalOrder.OrderExpired.selector);
+        twapSafe.getTradeableOrder(orderBytes);
+    }
+
+    function test_getTradeableOrder_FuzzRevertIfNotWithinSpan(uint256 startTime, uint256 currentTime) public {
+        // guard against overflows
+        vm.assume(startTime < type(uint32).max);
+        vm.assume(currentTime < type(uint32).max);
+        // guard against revert before start
+        vm.assume(startTime < currentTime);
+        // guard against revert after expiry
+        vm.assume(currentTime < startTime + (FREQUENCY * NUM_PARTS));
+        // guard against no reversion when within span
+        vm.assume((currentTime - startTime) % FREQUENCY >= SPAN);
+        // Revert when the order is signed by the safe and cancelled
+        TWAPOrder.Data memory order = _twapTestBundle(startTime);
+        bytes memory orderBytes = abi.encode(order);
+
+        // Create the order - this signs the order and marks it a valid
+        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+
+        vm.warp(startTime);
+
+        // Verify that the order is valid - this shouldn't revert
+        twapSafe.getTradeableOrder(orderBytes);
+
+        // Warp to within the span
+        vm.warp(currentTime);
+
+        vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
+        twapSafe.getTradeableOrder(orderBytes);
+    }
+
+    function test_getTradeableOrder_e2e_fuzz(uint256 startTime, uint256 currentTime) public {
+        // guard against overflows
+        vm.assume(startTime < type(uint32).max);
+        vm.assume(currentTime < type(uint32).max);
+        // guard against revert before start
+        vm.assume(startTime < currentTime);
+        // guard against revert after expiry
+        vm.assume(currentTime < startTime + (FREQUENCY * NUM_PARTS));
+        // guard against reversion outside of the span
+        vm.assume((currentTime - startTime) % FREQUENCY < SPAN);
+        // Revert when the order is signed by the safe and cancelled
+        TWAPOrder.Data memory order = _twapTestBundle(startTime);
+        bytes memory orderBytes = abi.encode(order);
+
+        // Create the order - this signs the order and marks it a valid
+        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+
+        // Warp to the current time
+        vm.warp(currentTime);
+
+        // This should not revert
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
+
+        // Verify that the order is valid - this shouldn't revert
+        assertTrue(twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes) == GPv2EIP1271.MAGICVALUE);
     }
 
     function testOrderMustBeSignedBySafe() public {
@@ -455,10 +689,10 @@ contract CoWTWAP is Base {
             receiver: address(0), // the safe itself
             partSellAmount: SELL_AMOUNT / NUM_PARTS,
             minPartLimit: LIMIT_PRICE,
-            t0: startTime.toUint32(),
+            t0: startTime,
             n: NUM_PARTS,
-            t: 1 hours,
-            span: 5 minutes
+            t: FREQUENCY,
+            span: SPAN
         });
     }
 }
