@@ -71,7 +71,6 @@ library TWAPOrder {
         // As `validTo` is unique, there is a corresponding unique `orderUid` for each `GPv2Order`. As
         // CoWProtocol enforces that each `orderUid` is only used once, this means that each part of the TWAP
         // order can only be executed once.
-        uint256 validTo = TWAPOrderMathLib.calculateValidTo(self.t0, self.n, self.t, self.span);
 
         // return the order
         order = GPv2Order.Data({
@@ -80,7 +79,7 @@ library TWAPOrder {
             receiver: self.receiver,
             sellAmount: self.partSellAmount,
             buyAmount: self.minPartLimit,
-            validTo: validTo.toUint32(),
+            validTo: TWAPOrderMathLib.calculateValidTo(self.t0, self.n, self.t, self.span).toUint32(),
             appData: APP_DATA,
             feeAmount: 0,
             kind: GPv2Order.KIND_SELL,

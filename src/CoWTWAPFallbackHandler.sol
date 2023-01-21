@@ -18,9 +18,8 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     /// @inheritdoc CoWFallbackHandler
     /// @dev Apply specific TWAP order validation.
     function dispatch(bytes calldata payload) public override(CoWFallbackHandler) {
-        TWAPOrder.Data memory twap = abi.decode(payload, (TWAPOrder.Data));
         /// @dev This will revert if the TWAP bundle is invalid.
-        TWAPOrder.validate(twap);
+        TWAPOrder.validate(abi.decode(payload, (TWAPOrder.Data)));
 
         /// @dev This will revert if the conditional order isn't signed or is cancelled.
         super.dispatch(payload);
