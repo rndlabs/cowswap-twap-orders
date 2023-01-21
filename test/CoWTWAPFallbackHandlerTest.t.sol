@@ -29,6 +29,7 @@ contract CoWTWAP is Base {
     event ConditionalOrderCreated(address indexed, bytes);
 
     CoWTWAPFallbackHandler twapSingleton;
+    CoWTWAPFallbackHandler twapSafeWithOrder;
     CoWTWAPFallbackHandler twapSafe;
 
     TWAPOrder.Data defaultBundle;
@@ -45,16 +46,16 @@ contract CoWTWAP is Base {
 
         // enable the CoW TWAP fallback handler for safe 1
         setFallbackHandler(safe1, twapSingleton);
-        twapSafe = CoWTWAPFallbackHandler(address(safe1));
+        twapSafeWithOrder = CoWTWAPFallbackHandler(address(safe1));
 
         // Set a default bundle
         defaultBundle = _twapTestBundle(block.timestamp + 1 days);
         defaultBundleBytes = abi.encode(defaultBundle);
 
-        deal(address(token0), address(twapSafe), SELL_AMOUNT);
+        deal(address(token0), address(twapSafeWithOrder), SELL_AMOUNT);
 
         createOrder(
-            GnosisSafe(payable(address(twapSafe))),
+            GnosisSafe(payable(address(twapSafeWithOrder))),
             defaultBundleBytes,
             defaultBundle.sellToken,
             defaultBundle.partSellAmount
@@ -86,7 +87,7 @@ contract CoWTWAP is Base {
     function testSafeEIP1271() public {
         // Get a message hash to sign
         bytes32 _msg = keccak256(bytes("Cows are cool"));
-        bytes32 msgDigest = twapSafe.getMessageHash(abi.encode(_msg));
+        bytes32 msgDigest = twapSafeWithOrder.getMessageHash(abi.encode(_msg));
 
         // Sign the message
         TestAccount[] memory signers = signers();
@@ -98,7 +99,7 @@ contract CoWTWAP is Base {
         bytes memory sigs = abi.encodePacked(signatures[0], signatures[1]);
 
         // Check that the signature is valid
-        assertTrue(twapSafe.isValidSignature(_msg, sigs) == bytes4(0x1626ba7e));
+        assertTrue(twapSafeWithOrder.isValidSignature(_msg, sigs) == bytes4(GPv2EIP1271.MAGICVALUE));
     }
 
     /// @dev Test creating a TWAP order (event emission)
@@ -149,7 +150,7 @@ contract CoWTWAP is Base {
         _twapSafe.dispatch(defaultBundleBytes);
 
         // Retrieve a valid order from another safe and try to use it
-        GPv2Order.Data memory part = twapSafe.getTradeableOrder(defaultBundleBytes);
+        GPv2Order.Data memory part = twapSafeWithOrder.getTradeableOrder(defaultBundleBytes);
         bytes32 partDigest = GPv2Order.hash(part, settlement.domainSeparator());
         vm.expectRevert(bytes("GS022"));
         _twapSafe.isValidSignature(partDigest, defaultBundleBytes);
@@ -163,11 +164,11 @@ contract CoWTWAP is Base {
         vm.warp(defaultBundle.t0);
 
         // First check that the order is valid by getting a *part* of the TWAP bundle
-        GPv2Order.Data memory part = twapSafe.getTradeableOrder(defaultBundleBytes);
+        GPv2Order.Data memory part = twapSafeWithOrder.getTradeableOrder(defaultBundleBytes);
 
         // Check that the order *part* is valid
         bytes32 partDigest = GPv2Order.hash(part, settlement.domainSeparator());
-        assertTrue(twapSafe.isValidSignature(partDigest, defaultBundleBytes) == bytes4(0x1626ba7e));
+        assertTrue(twapSafeWithOrder.isValidSignature(partDigest, defaultBundleBytes) == bytes4(GPv2EIP1271.MAGICVALUE));
 
         // Cancel the *TWAP order*
         bytes32 twapDigest = ConditionalOrderLib.hash(defaultBundleBytes, settlement.domainSeparator());
@@ -175,15 +176,15 @@ contract CoWTWAP is Base {
         safeSignMessage(safe1, abi.encode(cancelDigest));
 
         // Check that the *TWAP order* is cancelled
-        twapSafe.isValidSignature(cancelDigest, "");
+        twapSafeWithOrder.isValidSignature(cancelDigest, "");
 
         // Try to get a *part* of the TWAP order
         vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
-        twapSafe.getTradeableOrder(defaultBundleBytes);
+        twapSafeWithOrder.getTradeableOrder(defaultBundleBytes);
 
         // Check that the order is not valid
         vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
-        twapSafe.isValidSignature(partDigest, defaultBundleBytes);
+        twapSafeWithOrder.isValidSignature(partDigest, defaultBundleBytes);
     }
 
     /// @dev Test that the TWAP order is not valid before the start time
@@ -192,7 +193,7 @@ contract CoWTWAP is Base {
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
 
         // attempt to get a part of the TWAP bundle
-        twapSafe.getTradeableOrder(defaultBundleBytes);
+        twapSafeWithOrder.getTradeableOrder(defaultBundleBytes);
     }
 
     /// @dev Test that the TWAP order is not valid after the end time
@@ -205,7 +206,7 @@ contract CoWTWAP is Base {
         vm.expectRevert(ConditionalOrder.OrderExpired.selector);
 
         // get a part of the TWAP bundle
-        twapSafe.getTradeableOrder(defaultBundleBytes);
+        twapSafeWithOrder.getTradeableOrder(defaultBundleBytes);
     }
 
     function testNotValidAfterSpan() public {
@@ -213,7 +214,7 @@ contract CoWTWAP is Base {
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
 
         // attempt to get a part of the TWAP bundle
-        twapSafe.getTradeableOrder(defaultBundleBytes);
+        twapSafeWithOrder.getTradeableOrder(defaultBundleBytes);
     }
 
     /// @dev Simulate the TWAP order by iterating over every second and checking
@@ -225,11 +226,11 @@ contract CoWTWAP is Base {
         vm.warp(defaultBundle.t0);
 
         while (true) {
-            try twapSafe.getTradeableOrder(defaultBundleBytes) returns (GPv2Order.Data memory order) {
+            try twapSafeWithOrder.getTradeableOrder(defaultBundleBytes) returns (GPv2Order.Data memory order) {
                 bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
                 if (
                     orderFills[orderDigest] == 0
-                        && twapSafe.isValidSignature(orderDigest, defaultBundleBytes) == GPv2EIP1271.MAGICVALUE
+                        && twapSafeWithOrder.isValidSignature(orderDigest, defaultBundleBytes) == GPv2EIP1271.MAGICVALUE
                 ) {
                     orderFills[orderDigest] = 1;
                     totalFills++;
@@ -266,7 +267,7 @@ contract CoWTWAP is Base {
 
         // create the TWAP order
         createOrder(
-            GnosisSafe(payable(address(twapSafe))),
+            GnosisSafe(payable(address(twapSafeWithOrder))),
             noSpanBundleBytes,
             noSpanBundle.sellToken,
             noSpanBundle.partSellAmount
@@ -278,11 +279,11 @@ contract CoWTWAP is Base {
         vm.warp(noSpanBundle.t0);
 
         while (true) {
-            try twapSafe.getTradeableOrder(noSpanBundleBytes) returns (GPv2Order.Data memory order) {
+            try twapSafeWithOrder.getTradeableOrder(noSpanBundleBytes) returns (GPv2Order.Data memory order) {
                 bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
                 if (
                     orderFills[orderDigest] == 0
-                        && twapSafe.isValidSignature(orderDigest, noSpanBundleBytes) == GPv2EIP1271.MAGICVALUE
+                        && twapSafeWithOrder.isValidSignature(orderDigest, noSpanBundleBytes) == GPv2EIP1271.MAGICVALUE
                 ) {
                     orderFills[orderDigest] = 1;
                     totalFills++;

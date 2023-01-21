@@ -25,6 +25,7 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
 
     GnosisSafe public safe1;
     GnosisSafe public safe2;
+    GnosisSafe public safe3;
 
     function setUp() public virtual override(CoWProtocol) {
         // setup CoWProtocol
@@ -47,6 +48,7 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
 
         safe1 = GnosisSafe(payable(createSafe(owners, 2, 0)));
         safe2 = GnosisSafe(payable(createSafe(owners, 2, 1)));
+        safe3 = GnosisSafe(payable(createSafe(owners, 2, 2)));
     }
 
     function signers() internal view returns (TestAccount[] memory) {
