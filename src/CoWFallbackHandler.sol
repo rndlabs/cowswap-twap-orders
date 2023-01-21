@@ -42,7 +42,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @inheritdoc ConditionalOrder
-    function dispatch(bytes calldata payload) public override virtual {
+    function dispatch(bytes calldata payload) public virtual override {
         _onlySignedAndNotCancelled(payload);
         emit ConditionalOrderCreated(msg.sender, payload);
     }
@@ -136,10 +136,6 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @return The Gnosis Safe, domain separator and hash of the order
     function safeLookup(bytes memory order) internal view returns (GnosisSafe, bytes32, bytes32) {
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
-        return (
-            safe,
-            safe.domainSeparator(),
-            ConditionalOrderLib.hash(order, SETTLEMENT_DOMAIN_SEPARATOR)
-        );
+        return (safe, safe.domainSeparator(), ConditionalOrderLib.hash(order, SETTLEMENT_DOMAIN_SEPARATOR));
     }
 }

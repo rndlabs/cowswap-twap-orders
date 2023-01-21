@@ -8,6 +8,7 @@ import {ERC777TokensRecipient} from "safe/interfaces/ERC777TokensRecipient.sol";
 import {ERC1155TokenReceiver} from "safe/interfaces/ERC1155TokenReceiver.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
+import {GPv2EIP1271} from "cowprotocol/interfaces/GPv2EIP1271.sol";
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
@@ -226,7 +227,10 @@ contract CoWTWAP is Base {
         while (true) {
             try twapSafe.getTradeableOrder(defaultBundleBytes) returns (GPv2Order.Data memory order) {
                 bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
-                if (orderFills[orderDigest] == 0 && twapSafe.isValidSignature(orderDigest, defaultBundleBytes) == 0x1626ba7e) {
+                if (
+                    orderFills[orderDigest] == 0
+                        && twapSafe.isValidSignature(orderDigest, defaultBundleBytes) == GPv2EIP1271.MAGICVALUE
+                ) {
                     orderFills[orderDigest] = 1;
                     totalFills++;
                 }
@@ -276,7 +280,10 @@ contract CoWTWAP is Base {
         while (true) {
             try twapSafe.getTradeableOrder(noSpanBundleBytes) returns (GPv2Order.Data memory order) {
                 bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
-                if (orderFills[orderDigest] == 0 && twapSafe.isValidSignature(orderDigest, noSpanBundleBytes) == 0x1626ba7e) {
+                if (
+                    orderFills[orderDigest] == 0
+                        && twapSafe.isValidSignature(orderDigest, noSpanBundleBytes) == GPv2EIP1271.MAGICVALUE
+                ) {
                     orderFills[orderDigest] = 1;
                     totalFills++;
                 }
@@ -323,7 +330,7 @@ contract CoWTWAP is Base {
         uint256 span
     ) public {
         // --- Implicit assumptions
-        // currentTime is always set to the current block timestamp in the TWAP order, so we can assume that it is less 
+        // currentTime is always set to the current block timestamp in the TWAP order, so we can assume that it is less
         // than the max uint32 value.
         vm.assume(currentTime <= type(uint32).max);
 
@@ -355,15 +362,9 @@ contract CoWTWAP is Base {
         // than the end time of the current part.
         vm.assume(currentTime < startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0));
 
-        uint256 validTo = TWAPOrderMathLib.calculateValidTo(
-            currentTime,
-            startTime,
-            numParts,
-            frequency,
-            span
-        );
+        uint256 validTo = TWAPOrderMathLib.calculateValidTo(currentTime, startTime, numParts, frequency, span);
 
-        uint256 expectedValidTo =  startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0) - 1;
+        uint256 expectedValidTo = startTime + ((part + 1) * frequency) - (span != 0 ? (frequency - span) : 0) - 1;
 
         // `validTo` MUST be now or in the future.
         assertTrue(validTo >= currentTime);

@@ -7,7 +7,6 @@ import {ConditionalOrder} from "../interfaces/ConditionalOrder.sol";
 /// @dev Math is broken out into a library to enable easier unit testing and SMT verification.
 /// @author mfw78 <mfw78@rndlabs.xyz>
 library TWAPOrderMathLib {
-
     // --- functions
 
     /// @dev Calculate the `validTo` timestamp for part of a TWAP order.
@@ -16,13 +15,11 @@ library TWAPOrderMathLib {
     /// @param numParts The number of parts to split the order into.
     /// @param frequency The frequency of each part.
     /// @param span The span of each part.
-    function calculateValidTo(
-        uint256 currentTime,
-        uint256 startTime,
-        uint256 numParts,
-        uint256 frequency,
-        uint256 span
-    ) internal pure returns (uint256 validTo) {
+    function calculateValidTo(uint256 currentTime, uint256 startTime, uint256 numParts, uint256 frequency, uint256 span)
+        internal
+        pure
+        returns (uint256 validTo)
+    {
         /// @dev Use `assert` to check for invalid inputs as these should be caught by the
         /// conditional order validation logic in `dispatch` before calling this function.
         /// This is to save on gas deployment costs vs using `require` statements.

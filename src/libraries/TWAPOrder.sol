@@ -16,7 +16,7 @@ library TWAPOrder {
     using SafeCast for uint256;
 
     // --- errors specific to this library
-    
+
     error InvalidSameToken();
     error InvalidToken();
     error InvalidPartSellAmount();
@@ -71,13 +71,7 @@ library TWAPOrder {
         // As `validTo` is unique, there is a corresponding unique `orderUid` for each `GPv2Order`. As
         // CoWProtocol enforces that each `orderUid` is only used once, this means that each part of the TWAP
         // order can only be executed once.
-        uint256 validTo = TWAPOrderMathLib.calculateValidTo(
-            block.timestamp,
-            self.t0,
-            self.n,
-            self.t,
-            self.span
-        );
+        uint256 validTo = TWAPOrderMathLib.calculateValidTo(block.timestamp, self.t0, self.n, self.t, self.span);
 
         // return the order
         order = GPv2Order.Data({

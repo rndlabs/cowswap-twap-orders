@@ -5,6 +5,7 @@ pragma solidity >=0.7.0 <0.9.0;
 // TODO: Add vendoring notes (ie. virtual / public on `isValidSignature`)
 //       Imports from GnosisSafe only import GnosisSafe
 //       Internal for SAFE_MSG_TYPEHASH
+//       Linting
 
 import {DefaultCallbackHandler} from "safe/handler/DefaultCallbackHandler.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
@@ -31,7 +32,13 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
      * @param _signature Signature byte array associated with _data
      * @return a bool upon valid or invalid signature with corresponding _data
      */
-    function isValidSignature(bytes calldata _data, bytes calldata _signature) public view virtual override returns (bytes4) {
+    function isValidSignature(bytes calldata _data, bytes calldata _signature)
+        public
+        view
+        virtual
+        override
+        returns (bytes4)
+    {
         // Caller should be a Safe
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
         bytes32 messageHash = getMessageHashForSafe(safe, _data);
@@ -80,7 +87,7 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
     function getModules() external view returns (address[] memory) {
         // Caller should be a Safe
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
-        (address[] memory array, ) = safe.getModulesPaginated(SENTINEL_MODULES, 10);
+        (address[] memory array,) = safe.getModulesPaginated(SENTINEL_MODULES, 10);
         return array;
     }
 
@@ -90,7 +97,10 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
      * @param targetContract Address of the contract containing the code to execute.
      * @param calldataPayload Calldata that should be sent to the target contract (encoded method name and arguments).
      */
-    function simulate(address targetContract, bytes calldata calldataPayload) external returns (bytes memory response) {
+    function simulate(address targetContract, bytes calldata calldataPayload)
+        external
+        returns (bytes memory response)
+    {
         // Suppress compiler warnings about not using parameters, while allowing
         // parameters to keep names for documentation purposes. This does not
         // generate code.
@@ -142,9 +152,7 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
             mstore(0x40, add(response, responseSize))
             returndatacopy(response, 0x20, responseSize)
 
-            if iszero(mload(0x00)) {
-                revert(add(response, 0x20), mload(response))
-            }
+            if iszero(mload(0x00)) { revert(add(response, 0x20), mload(response)) }
         }
     }
 }
