@@ -19,7 +19,7 @@ library TWAPOrder {
     
     error InvalidSameToken();
     error InvalidToken();
-    error InvalidTotalSellAmountRemainder();
+    error InvalidPartSellAmount();
     error InvalidMaxPartLimit();
     error InvalidStartTime();
     error InvalidNumParts();
@@ -32,7 +32,7 @@ library TWAPOrder {
         IERC20 sellToken;
         IERC20 buyToken;
         address receiver;
-        uint256 totalSellAmount; // total amount of sellToken to sell
+        uint256 partSellAmount; // amount of sellToken to sell in each part
         uint256 minPartLimit; // max price to pay for a unit of buyToken denominated in sellToken
         uint256 t0;
         uint256 n;
@@ -55,7 +55,7 @@ library TWAPOrder {
     function validate(Data memory self) internal pure {
         if (!(self.sellToken != self.buyToken)) revert InvalidSameToken();
         if (!(address(self.sellToken) != address(0) && address(self.buyToken) != address(0))) revert InvalidToken();
-        if (!(self.totalSellAmount % self.n == 0)) revert InvalidTotalSellAmountRemainder();
+        if (!(self.partSellAmount > 0)) revert InvalidPartSellAmount();
         if (!(self.minPartLimit > 0)) revert InvalidMaxPartLimit();
         if (!(self.t0 < type(uint32).max)) revert InvalidStartTime();
         if (!(self.n > 1 && self.n < type(uint32).max)) revert InvalidNumParts();
@@ -84,7 +84,7 @@ library TWAPOrder {
             sellToken: self.sellToken,
             buyToken: self.buyToken,
             receiver: self.receiver,
-            sellAmount: self.totalSellAmount / self.n,
+            sellAmount: self.partSellAmount,
             buyAmount: self.minPartLimit,
             validTo: validTo.toUint32(),
             appData: APP_DATA,

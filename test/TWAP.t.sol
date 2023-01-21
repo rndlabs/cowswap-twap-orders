@@ -56,7 +56,7 @@ contract CoWTWAP is Base {
             GnosisSafe(payable(address(twapSafe))),
             defaultBundleBytes,
             defaultBundle.sellToken,
-            defaultBundle.totalSellAmount
+            defaultBundle.partSellAmount
         );
     }
 
@@ -118,7 +118,7 @@ contract CoWTWAP is Base {
         emit ConditionalOrderCreated(address(_twapSafe), orderBytes);
 
         // Everything here happens in a batch
-        createOrder(GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.totalSellAmount);
+        createOrder(GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.partSellAmount);
 
         // Check that the order signed by the safe.
         bytes32 orderDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
@@ -265,7 +265,7 @@ contract CoWTWAP is Base {
             GnosisSafe(payable(address(twapSafe))),
             noSpanBundleBytes,
             noSpanBundle.sellToken,
-            noSpanBundle.totalSellAmount
+            noSpanBundle.partSellAmount
         );
 
         uint256 totalFills;
@@ -376,7 +376,7 @@ contract CoWTWAP is Base {
             sellToken: token0,
             buyToken: token1,
             receiver: address(0), // the safe itself
-            totalSellAmount: SELL_AMOUNT,
+            partSellAmount: SELL_AMOUNT / NUM_PARTS,
             minPartLimit: LIMIT_PRICE,
             t0: startTime.toUint32(),
             n: NUM_PARTS,
