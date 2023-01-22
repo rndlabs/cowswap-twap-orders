@@ -11,11 +11,15 @@ import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 import {GPv2EIP1271} from "cowprotocol/interfaces/GPv2EIP1271.sol";
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
+import {GPv2Interaction} from "cowprotocol/libraries/GPv2Interaction.sol";
+import {GPv2Trade} from "cowprotocol/libraries/GPv2Trade.sol";
+import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
 
 import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
 import {TWAPOrderMathLib} from "../src/libraries/TWAPOrderMathLib.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
+import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
 
 import "./Base.t.sol";
 
@@ -26,7 +30,6 @@ uint32 constant NUM_PARTS = 24;
 uint32 constant SPAN = 5 minutes;
 
 contract CoWTWAP is Base {
-
     event ConditionalOrderCreated(address indexed, bytes);
 
     CoWTWAPFallbackHandler twapSingleton;
@@ -89,8 +92,12 @@ contract CoWTWAP is Base {
         );
 
         assertTrue(CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(IERC165).interfaceId));
-        assertTrue(CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(ERC721TokenReceiver).interfaceId));
-        assertTrue(CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(ERC1155TokenReceiver).interfaceId));
+        assertTrue(
+            CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(ERC721TokenReceiver).interfaceId)
+        );
+        assertTrue(
+            CompatibilityFallbackHandler(address(safe2)).supportsInterface(type(ERC1155TokenReceiver).interfaceId)
+        );
 
         // set the fallback handler to the CoW TWAP fallback handler
         setFallbackHandler(safe2, twapSingleton);
@@ -305,7 +312,9 @@ contract CoWTWAP is Base {
         emit ConditionalOrderCreated(address(_twapSafe), orderBytes);
 
         // Everything here happens in a batch
-        createOrder(GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(
+            GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n
+        );
 
         // Check that the order signed by the safe.
         bytes32 orderDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
@@ -451,7 +460,10 @@ contract CoWTWAP is Base {
         GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
 
         // Verify that the order is valid - this shouldn't revert
-        assertTrue(twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes) == GPv2EIP1271.MAGICVALUE);
+        assertTrue(
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+                == GPv2EIP1271.MAGICVALUE
+        );
     }
 
     function test_isValidSignature_RevertIfOrderNotSigned() public {
@@ -469,7 +481,10 @@ contract CoWTWAP is Base {
         GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
 
         // Verify that the order is valid - this shouldn't revert
-        assertTrue(twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes) == GPv2EIP1271.MAGICVALUE);
+        assertTrue(
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+                == GPv2EIP1271.MAGICVALUE
+        );
 
         // Try to verify the signature with a different order
         TWAPOrder.Data memory order2 = _twapTestBundle(block.timestamp + 10);
@@ -498,7 +513,10 @@ contract CoWTWAP is Base {
         GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
 
         // Verify that the order is valid - this shouldn't revert
-        assertTrue(twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes) == GPv2EIP1271.MAGICVALUE);
+        assertTrue(
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+                == GPv2EIP1271.MAGICVALUE
+        );
 
         // Cancel the order
         bytes32 twapDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
@@ -600,107 +618,124 @@ contract CoWTWAP is Base {
         GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
 
         // Verify that the order is valid - this shouldn't revert
-        assertTrue(twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes) == GPv2EIP1271.MAGICVALUE);
+        assertTrue(
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+                == GPv2EIP1271.MAGICVALUE
+        );
     }
 
-    /// @dev Simulate the TWAP order by iterating over every second and checking
-    ///      that the number of parts is correct.
-    function testSimulateTWAP() public {
-        uint256 totalFills;
-        uint256 numSecondsProcessed;
+    /// @dev This is a very expensive test as it iterates over every second for
+    ///      the duration of the TWAP order.
+    ///      This is a full e2e test from order creation to settlement.
+    /// @param numParts The number of parts in the TWAP order
+    /// @param frequency The frequency of the TWAP order
+    /// @param span The span of the TWAP order
+    function test_simulate_fuzz(uint32 numParts, uint32 frequency, uint32 span) public {
+        // guard against underflows
+        vm.assume(span < frequency);
+        // guard against reversions
+        vm.assume(numParts > 1);
+        vm.assume(frequency >= 60);
+        // provide some sane limits to avoid out of gas on test issues
+        vm.assume(
+            span == 0
+                ? uint256(numParts) * uint256(frequency) < 3 hours
+                : uint256(numParts) * uint256(span) + (uint256(numParts) * uint256(frequency - span) * 3) < 12 hours
+        );
 
-        vm.warp(defaultBundle.t0);
+        // Assemble the TWAP bundle
+        TWAPOrder.Data memory bundle = _twapTestBundle(block.timestamp);
+        bundle.n = numParts;
+        bundle.t = frequency;
+        bundle.span = span;
+        bytes memory bundleBytes = abi.encode(bundle);
 
-        while (true) {
-            try twapSafeWithOrder.getTradeableOrder(defaultBundleBytes) returns (GPv2Order.Data memory order) {
-                bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
-                if (
-                    orderFills[orderDigest] == 0
-                        && twapSafeWithOrder.isValidSignature(orderDigest, defaultBundleBytes) == GPv2EIP1271.MAGICVALUE
-                ) {
-                    orderFills[orderDigest] = 1;
-                    totalFills++;
-                }
+        // Deal the tokens to the safe and the user
+        deal(address(bundle.sellToken), address(twapSafeWithOrder), bundle.partSellAmount * bundle.n);
+        deal(address(bundle.buyToken), bob.addr, bundle.minPartLimit * bundle.n);
 
-                // only count this second if we didn't revert
-                numSecondsProcessed++;
-            } catch (bytes memory lowLevelData) {
-                bytes4 desiredSelector = bytes4(keccak256(bytes("OrderExpired()")));
-                bytes4 receivedSelector = bytes4(lowLevelData);
-                if (receivedSelector == desiredSelector) {
-                    break;
-                }
-            }
-            vm.warp(block.timestamp + 1 seconds);
-        }
+        // Record balances before the simulation starts
+        uint256 safeSellTokenBalance = IERC20(bundle.sellToken).balanceOf(address(twapSafeWithOrder));
+        uint256 safeBuyTokenBalance = IERC20(bundle.buyToken).balanceOf(address(twapSafeWithOrder));
+        uint256 bobBuyTokenBalance = IERC20(bundle.sellToken).balanceOf(bob.addr);
+        uint256 bobSellTokenBalance = IERC20(bundle.buyToken).balanceOf(bob.addr);
 
-        // the timestamp should be equal to the end time of the TWAP order
-        assertTrue(block.timestamp == defaultBundle.t0 + defaultBundle.n * defaultBundle.t);
-        // the number of seconds processed should be equal to the number of
-        // parts times span (if span is not 0)
-        assertTrue(numSecondsProcessed == defaultBundle.n * defaultBundle.span);
-        // the number of fills should be equal to the number of parts
-        assertTrue(totalFills == defaultBundle.n);
-    }
-
-    /// @dev Simulate the TWAP order with a span of 0
-    function testSimulateTWAPNoSpan() public {
-        TWAPOrder.Data memory noSpanBundle = _twapTestBundle(block.timestamp + 10 days);
-        noSpanBundle.n = NUM_PARTS / 2;
-        noSpanBundle.t = FREQUENCY / 2;
-        noSpanBundle.span = 0;
-        bytes memory noSpanBundleBytes = abi.encode(noSpanBundle);
-
-        // create the TWAP order
+        // Create the order
         createOrder(
             GnosisSafe(payable(address(twapSafeWithOrder))),
-            noSpanBundleBytes,
-            noSpanBundle.sellToken,
-            noSpanBundle.partSellAmount * noSpanBundle.n
+            bundleBytes,
+            bundle.sellToken,
+            bundle.partSellAmount * bundle.n
         );
 
         uint256 totalFills;
-        uint256 numSecondsProcessed;
+        uint256 numSecsProcessed;
 
-        vm.warp(noSpanBundle.t0);
+        // Warp to the start of the TWAP
+        vm.warp(bundle.t0);
 
         while (true) {
-            try twapSafeWithOrder.getTradeableOrder(noSpanBundleBytes) returns (GPv2Order.Data memory order) {
+            // Simulate being called by the watch tower
+            try twapSafeWithOrder.getTradeableOrder(bundleBytes) returns (GPv2Order.Data memory order) {
                 bytes32 orderDigest = GPv2Order.hash(order, settlement.domainSeparator());
                 if (
                     orderFills[orderDigest] == 0
-                        && twapSafeWithOrder.isValidSignature(orderDigest, noSpanBundleBytes) == GPv2EIP1271.MAGICVALUE
+                        && twapSafeWithOrder.isValidSignature(orderDigest, bundleBytes) == GPv2EIP1271.MAGICVALUE
                 ) {
+                    // Have a new order, so let's settle it
+                    settlePart(order, bundleBytes);
+
                     orderFills[orderDigest] = 1;
                     totalFills++;
                 }
+
                 // only count this second if we didn't revert
-                numSecondsProcessed++;
+                numSecsProcessed++;
             } catch (bytes memory lowLevelData) {
-                bytes4 failedSelected = bytes4(keccak256(bytes("OrderNotValid()")));
-                bytes4 desiredSelector = bytes4(keccak256(bytes("OrderExpired()")));
                 bytes4 receivedSelector = bytes4(lowLevelData);
 
                 // The order should always be valid because there is no span
-                if (receivedSelector == failedSelected) {
+                if (span == 0 && receivedSelector == ConditionalOrder.OrderNotValid.selector) {
                     revert("OrderNotValid() should not be thrown");
                 }
 
-                // The order should expire after the last period
-                if (receivedSelector == desiredSelector) {
+                if (receivedSelector == ConditionalOrder.OrderExpired.selector) {
                     break;
                 }
-                revert();
             }
             vm.warp(block.timestamp + 1 seconds);
         }
+
         // the timestamp should be equal to the end time of the TWAP order
-        assertTrue(block.timestamp == noSpanBundle.t0 + noSpanBundle.n * noSpanBundle.t);
+        assertTrue(block.timestamp == bundle.t0 + bundle.n * bundle.t, "TWAP order should be expired");
         // the number of seconds processed should be equal to the number of
         // parts times span (if span is not 0)
-        assertTrue(numSecondsProcessed == noSpanBundle.n * noSpanBundle.t);
+        assertTrue(
+            numSecsProcessed == ((span == 0) ? bundle.n * bundle.t : bundle.n * bundle.span),
+            "Number of seconds processed is incorrect"
+        );
         // the number of fills should be equal to the number of parts
-        assertTrue(totalFills == noSpanBundle.n);
+        assertTrue(totalFills == bundle.n, "Number of fills is incorrect");
+
+        // Verify that balances are as expected after the simulation
+        assertTrue(
+            IERC20(bundle.sellToken).balanceOf(address(twapSafeWithOrder))
+                == safeSellTokenBalance - bundle.partSellAmount * bundle.n,
+            "TWAP safe sell token balance is incorrect"
+        );
+        assertTrue(
+            IERC20(bundle.buyToken).balanceOf(address(twapSafeWithOrder))
+                >= safeBuyTokenBalance + bundle.minPartLimit * bundle.n,
+            "TWAP safe buy token balance is incorrect"
+        );
+        assertTrue(
+            IERC20(bundle.sellToken).balanceOf(bob.addr) == bobBuyTokenBalance + bundle.partSellAmount * bundle.n,
+            "Bob buy token balance is incorrect"
+        );
+        assertTrue(
+            IERC20(bundle.buyToken).balanceOf(bob.addr) >= bobSellTokenBalance - bundle.minPartLimit * bundle.n,
+            "Bob sell token balance is incorrect"
+        );
     }
 
     /// @dev Fuzz test `calculateValidTo` function
@@ -774,5 +809,81 @@ contract CoWTWAP is Base {
             t: FREQUENCY,
             span: SPAN
         });
+    }
+
+    function settlePart(GPv2Order.Data memory order, bytes memory bundleBytes) internal {
+        // Generate Bob's counter order
+        GPv2Order.Data memory bobOrder = GPv2Order.Data({
+            sellToken: order.buyToken,
+            buyToken: order.sellToken,
+            receiver: address(0),
+            sellAmount: order.buyAmount,
+            buyAmount: order.sellAmount,
+            validTo: order.validTo,
+            appData: order.appData,
+            feeAmount: 0,
+            kind: GPv2Order.KIND_BUY,
+            partiallyFillable: false,
+            buyTokenBalance: GPv2Order.BALANCE_ERC20,
+            sellTokenBalance: GPv2Order.BALANCE_ERC20
+        });
+
+        bytes memory bobSignature =
+            TestAccountLib.signPacked(bob, GPv2Order.hash(bobOrder, settlement.domainSeparator()));
+
+        // Authorize the GPv2VaultRelayer to spend bob's sell token
+        vm.prank(bob.addr);
+        IERC20(bobOrder.sellToken).approve(address(relayer), bobOrder.sellAmount);
+
+        // first declare the tokens we will be trading
+        IERC20[] memory tokens = new IERC20[](2);
+        tokens[0] = IERC20(order.sellToken);
+        tokens[1] = IERC20(order.buyToken);
+
+        // second declare the clearing prices
+        uint256[] memory clearingPrices = new uint256[](2);
+        clearingPrices[0] = bobOrder.sellAmount;
+        clearingPrices[1] = bobOrder.buyAmount;
+
+        // third declare the trades
+        GPv2Trade.Data[] memory trades = new GPv2Trade.Data[](2);
+
+        // The safe's order is the first trade
+        trades[0] = GPv2Trade.Data({
+            sellTokenIndex: 0,
+            buyTokenIndex: 1,
+            receiver: address(0),
+            sellAmount: order.sellAmount,
+            buyAmount: order.buyAmount,
+            validTo: order.validTo,
+            appData: order.appData,
+            feeAmount: order.feeAmount,
+            flags: GPv2TradeEncoder.encodeFlags(order, GPv2Signing.Scheme.Eip1271),
+            executedAmount: order.sellAmount,
+            signature: abi.encodePacked(address(twapSafeWithOrder), bundleBytes)
+        });
+
+        // Bob's order is the second trade
+        trades[1] = GPv2Trade.Data({
+            sellTokenIndex: 1,
+            buyTokenIndex: 0,
+            receiver: address(0),
+            sellAmount: bobOrder.sellAmount,
+            buyAmount: bobOrder.buyAmount,
+            validTo: bobOrder.validTo,
+            appData: bobOrder.appData,
+            feeAmount: bobOrder.feeAmount,
+            flags: GPv2TradeEncoder.encodeFlags(bobOrder, GPv2Signing.Scheme.Eip712),
+            executedAmount: bobOrder.sellAmount,
+            signature: bobSignature
+        });
+
+        // fourth declare the interactions
+        GPv2Interaction.Data[][3] memory interactions =
+            [new GPv2Interaction.Data[](0), new GPv2Interaction.Data[](0), new GPv2Interaction.Data[](0)];
+
+        // finally we can execute the settlement
+        vm.prank(solver.addr);
+        settlement.settle(tokens, clearingPrices, trades, interactions);
     }
 }
