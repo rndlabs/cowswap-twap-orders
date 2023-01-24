@@ -26,7 +26,7 @@ uint32 constant FREQUENCY = 1 hours;
 uint32 constant NUM_PARTS = 24;
 uint32 constant SPAN = 5 minutes;
 
-contract CoWTWAP is Base {
+contract CoWTWAPFallbackHandlerTest is Base {
     event ConditionalOrderCreated(address indexed, bytes);
 
     CoWTWAPFallbackHandler twapSingleton;
