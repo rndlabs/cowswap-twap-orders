@@ -10,6 +10,7 @@ import {ConditionalOrderLib} from "../src/libraries/ConditionalOrderLib.sol";
 import {CoWFallbackHandler} from "../src/CoWFallbackHandler.sol";
 
 import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.sol";
+import {SafeLib} from "./libraries/SafeLib.sol";
 import {IERC20, Tokens} from "./helpers/Tokens.sol";
 import {CoWProtocol} from "./helpers/CoWProtocol.sol";
 import {Safe} from "./helpers/Safe.sol";
@@ -17,6 +18,7 @@ import {Safe} from "./helpers/Safe.sol";
 abstract contract Base is Test, Tokens, Safe, CoWProtocol {
     using TestAccountLib for TestAccount[];
     using TestAccountLib for TestAccount;
+    using SafeLib for GnosisSafe;
 
     // --- accounts
     TestAccount alice;
@@ -46,9 +48,9 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
         owners[1] = bob.addr;
         owners[2] = carol.addr;
 
-        safe1 = GnosisSafe(payable(createSafe(owners, 2, 0)));
-        safe2 = GnosisSafe(payable(createSafe(owners, 2, 1)));
-        safe3 = GnosisSafe(payable(createSafe(owners, 2, 2)));
+        safe1 = GnosisSafe(payable(SafeLib.createSafe(factory, singleton, owners, 2, address(handler), 0)));
+        safe2 = GnosisSafe(payable(SafeLib.createSafe(factory, singleton, owners, 2, address(handler), 1)));
+        safe3 = GnosisSafe(payable(SafeLib.createSafe(factory, singleton, owners, 2, address(handler), 2)));
     }
 
     function signers() internal view returns (TestAccount[] memory) {
@@ -61,8 +63,7 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
 
     function setFallbackHandler(GnosisSafe safe, CoWFallbackHandler handler) internal {
         // do the transaction
-        execute(
-            safe,
+        safe.execute(
             address(safe),
             0,
             abi.encodeWithSelector(safe.setFallbackHandler.selector, address(handler)),
@@ -72,8 +73,7 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
     }
 
     function safeSignMessage(GnosisSafe safe, bytes memory message) internal {
-        execute(
-            safe,
+        safe.execute(
             address(signMessageLib),
             0,
             abi.encodeWithSelector(signMessageLib.signMessage.selector, message),
