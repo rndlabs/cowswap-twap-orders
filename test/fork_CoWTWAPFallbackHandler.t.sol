@@ -33,11 +33,14 @@ contract Fork is Base {
     CoWTWAPFallbackHandler public twapHandler;
     GnosisSafeProxy public proxy;
 
-    IERC20 sellToken = IERC20(vm.envAddress("DAI"));
-    IERC20 buyToken = IERC20(vm.envAddress("WETH"));
+    IERC20 sellToken;
+    IERC20 buyToken;
 
     /// @dev Deploys the CoWTWAPFallbackHandler contract on the current fork.
     function test_fork_deploy() public {
+        sellToken = IERC20(vm.envAddress("DAI"));
+        buyToken = IERC20(vm.envAddress("WETH"));
+
         string memory MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
         vm.createSelectFork(MAINNET_RPC_URL);
 
