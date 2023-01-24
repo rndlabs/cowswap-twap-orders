@@ -45,7 +45,7 @@ contract Fork is Base {
         relayer = vm.envAddress("RELAYER");
 
         // Deploy the CoWTWAPFallbackHandler contract
-        twapHandler = new CoWTWAPFallbackHandler(settlement);
+        twapHandler = new CoWTWAPFallbackHandler(address(settlement));
     }
 
     function test_fork_setFallbackHandler() public {

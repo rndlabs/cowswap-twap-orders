@@ -43,7 +43,7 @@ contract CoWTWAP is Base {
         super.setUp();
 
         // deploy the CoW TWAP fallback handler
-        twapSingleton = new CoWTWAPFallbackHandler(settlement);
+        twapSingleton = new CoWTWAPFallbackHandler(address(settlement));
 
         // enable the CoW TWAP fallback handler for safe 1
         setFallbackHandler(safe1, twapSingleton);

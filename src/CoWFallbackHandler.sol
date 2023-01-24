@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
-import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
 
 import {CompatibilityFallbackHandler} from "./vendored/CompatibilityFallbackHandler.sol";
+import {CoWSettlement} from "./vendored/CoWSettlement.sol";
 import {ConditionalOrder} from "./interfaces/ConditionalOrder.sol";
 import {ConditionalOrderLib} from "./libraries/ConditionalOrderLib.sol";
 
@@ -19,11 +19,11 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     /// @dev The length of the conditional order in bytes to be overriden by the child contract.
     function CONDITIONAL_ORDER_BYTES_LENGTH() internal pure virtual returns (uint256);
 
-    constructor(GPv2Settlement _settlementContract) {
+    constructor(address _settlementContract) {
         /// @dev Cache the domain separator from the settlement contract to save
         /// on gas costs. Any change to the settlement contract will require a
         /// new deployment of this contract.
-        SETTLEMENT_DOMAIN_SEPARATOR = _settlementContract.domainSeparator();
+        SETTLEMENT_DOMAIN_SEPARATOR = CoWSettlement(_settlementContract).domainSeparator();
     }
 
     /// @dev Checks that the order is signed by the Safe and has not been cancelled.

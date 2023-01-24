@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
-import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 
 import {TWAPOrder} from "./libraries/TWAPOrder.sol";
 import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
@@ -13,7 +12,7 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
     uint256 internal constant _CONDITIONAL_ORDER_BYTES_LENGTH = 288;
 
-    constructor(GPv2Settlement _settlementContract) CoWFallbackHandler(_settlementContract) {}
+    constructor(address _settlementContract) CoWFallbackHandler(_settlementContract) {}
 
     /// @inheritdoc CoWFallbackHandler
     /// @dev Apply specific TWAP order validation.
