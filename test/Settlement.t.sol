@@ -10,7 +10,7 @@ import {GPv2Interaction} from "cowprotocol/libraries/GPv2Interaction.sol";
 import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
 import {GPv2Trade} from "cowprotocol/libraries/GPv2Trade.sol";
 
-import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
+import {GPv2TradeEncoder} from "../src/vendored/GPv2TradeEncoder.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
 import "./Base.t.sol";

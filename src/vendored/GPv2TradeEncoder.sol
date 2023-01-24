@@ -1,15 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0-or-later
-
-// TODO: Write additional notes on vendoring, adding in encode flags, etc.
-
-/* solhint-disable max-line-length */
-// Vendored with minor modifications:
-// - import paths
-// - solidity version
-// - Linter config fixes
-// Original source:
-// <https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/libraries/GPv2Trade.sol>
-
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
 import {IERC20} from "@openzeppelin/interfaces/IERC20.sol";
@@ -18,10 +7,12 @@ import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
 
 /// @title Gnosis Protocol v2 Trade Library.
-/// @author Gnosis Developers
-library GPv2Trade {
+/// @author mfw78 <mfw78@rndlabs.xyz>
+/// @dev This library provides functions for encoding trade flags
+/// Encoding methodology is adapted from upstream at
+/// https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/libraries/GPv2Trade.sol
+library GPv2TradeEncoder {
     using GPv2Order for GPv2Order.Data;
-    using GPv2Order for bytes;
 
     // uint256 constant FLAG_ORDER_KIND_SELL = 0x00;
     uint256 constant FLAG_ORDER_KIND_BUY = 0x01;
@@ -40,22 +31,6 @@ library GPv2Trade {
     uint256 constant FLAG_SIGNATURE_SCHEME_ETHSIGN = 0x20;
     uint256 constant FLAG_SIGNATURE_SCHEME_EIP1271 = 0x40;
     uint256 constant FLAG_SIGNATURE_SCHEME_PRESIGN = 0x60;
-
-    /// @dev A struct representing a trade to be executed as part a batch
-    /// settlement.
-    struct Data {
-        uint256 sellTokenIndex;
-        uint256 buyTokenIndex;
-        address receiver;
-        uint256 sellAmount;
-        uint256 buyAmount;
-        uint32 validTo;
-        bytes32 appData;
-        uint256 feeAmount;
-        uint256 flags;
-        uint256 executedAmount;
-        bytes signature;
-    }
 
     /// @dev Decodes trade flags.
     ///

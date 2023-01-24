@@ -16,7 +16,7 @@ import {ConditionalOrder} from "../src/interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
 import {TWAPOrderMathLib} from "../src/libraries/TWAPOrderMathLib.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
-import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
+import {GPv2TradeEncoder} from "../src/vendored/GPv2TradeEncoder.sol";
 
 import "./Base.t.sol";
 

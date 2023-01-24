@@ -17,7 +17,7 @@ import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 import {GPv2VaultRelayer} from "cowprotocol/GPv2VaultRelayer.sol";
 
 import {ConditionalOrderLib} from "../src/libraries/ConditionalOrderLib.sol";
-import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
+import {GPv2TradeEncoder} from "../src/vendored/GPv2TradeEncoder.sol";
 import {CoWFallbackHandler} from "../src/CoWFallbackHandler.sol";
 
 import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.t.sol";
