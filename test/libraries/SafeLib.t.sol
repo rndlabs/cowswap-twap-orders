@@ -9,7 +9,7 @@ import {CompatibilityFallbackHandler} from "safe/handler/CompatibilityFallbackHa
 import {MultiSend} from "safe/libraries/MultiSend.sol";
 import {SignMessageLib} from "safe/libraries/SignMessageLib.sol";
 
-import {TestAccount, TestAccountLib} from "../libraries/TestAccountLib.sol";
+import {TestAccount, TestAccountLib} from "../libraries/TestAccountLib.t.sol";
 
 library SafeLib {
     using TestAccountLib for TestAccount[];

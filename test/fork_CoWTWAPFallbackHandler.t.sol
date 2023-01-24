@@ -20,9 +20,9 @@ import {GPv2AllowListAuthentication} from "cowprotocol/GPv2AllowListAuthenticati
 import {TWAPOrder} from "../src/libraries/TWAPOrder.sol";
 import {CoWTWAPFallbackHandler} from "../src/CoWTWAPFallbackHandler.sol";
 
-import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.sol";
+import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.t.sol";
 
-import {SafeLib} from "./libraries/SafeLib.sol";
+import {SafeLib} from "./libraries/SafeLib.t.sol";
 import {Base} from "./Base.t.sol";
 
 contract Fork is Base {

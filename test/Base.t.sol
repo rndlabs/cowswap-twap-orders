@@ -20,11 +20,11 @@ import {ConditionalOrderLib} from "../src/libraries/ConditionalOrderLib.sol";
 import {GPv2Trade as GPv2TradeEncoder} from "../src/vendored/GPv2Trade.sol";
 import {CoWFallbackHandler} from "../src/CoWFallbackHandler.sol";
 
-import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.sol";
-import {SafeLib} from "./libraries/SafeLib.sol";
-import {IERC20, Tokens} from "./helpers/Tokens.sol";
-import {CoWProtocol} from "./helpers/CoWProtocol.sol";
-import {Safe} from "./helpers/Safe.sol";
+import {TestAccount, TestAccountLib} from "./libraries/TestAccountLib.t.sol";
+import {SafeLib} from "./libraries/SafeLib.t.sol";
+import {IERC20, Tokens} from "./helpers/Tokens.t.sol";
+import {CoWProtocol} from "./helpers/CoWProtocol.t.sol";
+import {Safe} from "./helpers/Safe.t.sol";
 
 abstract contract Base is Test, Tokens, Safe, CoWProtocol {
     using TestAccountLib for TestAccount[];

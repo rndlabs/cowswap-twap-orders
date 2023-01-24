@@ -12,7 +12,7 @@ import {IVault as GPv2IVault} from "cowprotocol/interfaces/IVault.sol";
 import {GPv2Settlement} from "cowprotocol/GPv2Settlement.sol";
 import {GPv2AllowListAuthentication} from "cowprotocol/GPv2AllowListAuthentication.sol";
 
-import {TestAccount, TestAccountLib} from "../libraries/TestAccountLib.sol";
+import {TestAccount, TestAccountLib} from "../libraries/TestAccountLib.t.sol";
 
 /// @title CoWProtocol - A helper contract for local integration testing with CoW Protocol.
 /// @author mfw78 <mfw78@rndlabs.xyz>
