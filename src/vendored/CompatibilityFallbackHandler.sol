@@ -2,10 +2,13 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 /* solhint-disable max-line-length */
-// TODO: Add vendoring notes (ie. virtual / public on `isValidSignature`)
-//       Imports from GnosisSafe only import GnosisSafe
-//       Internal for SAFE_MSG_TYPEHASH
-//       Linting
+/// This file is a vendored version of:
+/// https://github.com/safe-global/safe-contracts/blob/5abc0bb25e7bffce8c9e53de47a392229540acf9/contracts/handler/CompatibilityFallbackHandler.sol
+/// Vendoring is:
+/// - imports changed to reference submodules
+/// - `public` and `virtual` added to `isValidSignature` to allow overriding
+/// - `private` changed to `internal` for `SAFE_MSG_TYPEHASH` to allow inheritance
+/// - Linting
 
 import {DefaultCallbackHandler} from "safe/handler/DefaultCallbackHandler.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";

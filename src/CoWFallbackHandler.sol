@@ -8,9 +8,9 @@ import {CoWSettlement} from "./vendored/CoWSettlement.sol";
 import {ConditionalOrder} from "./interfaces/ConditionalOrder.sol";
 import {ConditionalOrderLib} from "./libraries/ConditionalOrderLib.sol";
 
-/// @title CoW Fallback Handler
+/// @title CoW `ConditionalOrder` Fallback Handler
 /// @author mfw78 <mfw78@rndlabs.xyz>
-/// @dev This is an abstract contract that smart orders can inherit from.
+/// @dev This is an abstract contract that `ConditionalOrder`s inherit from.
 abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, ConditionalOrder {
     /// @dev The domain separator from the settlement contract used to verify
     /// signatures.
@@ -27,6 +27,8 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @dev Checks that the order is signed by the Safe and has not been cancelled.
+    /// Reverts if the order is not signed or has been cancelled.
+    /// @param order The conditional order to check.
     function _onlySignedAndNotCancelled(bytes memory order) internal view {
         (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(order);
 
@@ -48,31 +50,34 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @inheritdoc CompatibilityFallbackHandler
-    /// @dev Should return whether the signature provided is valid for the provided data.
-    /// 1. Try to verify the order using the smart order logic.
+    /// @dev Should return whether the signature provided is valid for the provided _dataHash.
+    /// 1. Try to verify the conditional order using the order's logic.
     /// 2. If the order verification fails, try to verify the signature using the
-    ///    chained fallback handler.
+    ///    standard `CompatibilityFallbackHandler`.
     function isValidSignature(bytes32 _dataHash, bytes calldata _signature)
         public
         view
         override
         returns (bytes4 magicValue)
     {
-        /// @dev Only attempt to decode signatures of the expected length.
-        ///      If not a pre-signed message, then try to verify the order.
+        /// @dev Only attempt to decode signatures of the expected length. This has the added
+        /// benefit of calling `super` early if the signature is a pre-signed message (ie. `_signature`
+        /// of `bytes` length 0).
         if (_signature.length == CONDITIONAL_ORDER_BYTES_LENGTH() && verifyTrade(_dataHash, _signature)) {
             return UPDATED_MAGIC_VALUE;
         }
 
         // If the order verification fails, try to verify the signature using the
-        // chained fallback handler.
+        // standard `CompatibilityFallbackHandler`.
         return super.isValidSignature(_dataHash, _signature);
     }
 
     /// @dev An internal function that is overriden by the child contract when implementing
-    /// the conditional order logic.
+    /// the conditional order logic. Inheriting contracts should call this function to the 
+    /// signed order and check that it has not been cancelled.
     /// @param payload Any arbitrary data passed in to validate the order.
-    /// @return A boolean indicating whether the order is valid.
+    /// @return A boolean indicating whether the order is valid. Reverts if the order has been
+    /// cancelled.
     function verifyTrade(bytes32, bytes calldata payload) internal view virtual returns (bool) {
         (GnosisSafe safe, bytes32 domainSeparator, bytes32 digest) = safeLookup(payload);
         if (!isSignedConditionalOrder(safe, domainSeparator, digest)) {
@@ -86,8 +91,8 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         return true;
     }
 
-    /// @dev Returns false if the order has not been signed by the Safe
-    /// @param safe The Gnosis Safe that is signing the order
+    /// @dev Determine if the conditional order has been signed by the safe or not
+    /// @param safe The Safe to check that is signing the order
     /// @param domainSeparator The domain separator of the Safe
     /// @param hash The hash of the order
     /// @return True if the order has been signed by the Safe
@@ -99,8 +104,8 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         return safe.signedMessages(getMessageHashForSafe(domainSeparator, abi.encode(hash))) != 0;
     }
 
-    /// @dev Returns true if the order has been cancelled by the Safe
-    /// @param safe The Gnosis Safe that is cancelling the order
+    /// @dev Determine if the conditional order has been cancelled by the safe or not
+    /// @param safe The Safe that is cancelling the order
     /// @param domainSeparator The domain separator of the Safe
     /// @param hash The hash of the order
     /// @return True if the order has been cancelled by the Safe
@@ -116,7 +121,10 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
         ) != 0;
     }
 
-    /// @dev Returns hash of a message that can be signed by owners.
+    /// @dev Returns hash of a message that can be signed by owners. This has been copied from
+    /// https://github.com/safe-global/safe-contracts/blob/5abc0bb25e7bffce8c9e53de47a392229540acf9/contracts/handler/CompatibilityFallbackHandler.sol
+    /// however `safe` parameter has been replaced by the `domainSeparator` parameter. This allows for
+    /// the `domainSeparator` to be cached in the calling routine, saving gas.
     /// @param domainSeparator Domain separator of the Safe.
     /// @param message Message that should be hashed
     /// @return Message hash.

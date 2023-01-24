@@ -31,17 +31,26 @@ bytes32 constant CANCEL_ORDER_TYPE_HASH = hex"e2d395a4176e36febca53784f02b9bf31a
 
 /// @title Conditional Order Interface
 /// @author CoW Protocol Developers + mfw78 <mfw78@rndlabs.xyz>
-/// @notice This interface is used to create conditional orders that can be posted to the CoW Protocol API.
+/// @dev This interface is an extended version of `ConditionalOrder` as found at the repository:
+/// https://github.com/cowprotocol/conditional-smart-orders/blob/main/src/ConditionalOrder.sol. The differences are:
+/// - Event `ConditionalOrderCreated` contains both the `address` of the Safe that implements the `getTradeableOrder` function
+///   and the `bytes` parameter representing the conditional order.
+/// - Function `dispatch` dedicated to emitting the `ConditionalOrderCreated` event.
+/// - Function `getTradeableOrder` takes the `bytes` parameter representing the conditional order as input.
 interface ConditionalOrder {
-    /// @dev This error is returned if the order condition is not met.
+    /// @dev This error is returned by the `getTradeableOrder` function if the order condition is not met.
     error OrderNotValid();
+    /// @dev This error is returned by the `getTradeableOrder` function if the order is not signed.
     error OrderNotSigned();
+    /// @dev This error is returned by the `getTradeableOrder` function if the order is expired.
     error OrderExpired();
+    /// @dev This error is returned by the `getTradeableOrder` function if the order is cancelled.
     error OrderCancelled();
 
     /// @dev This event is emitted by the Safe when a conditional order is created.
     ///      The `address` of the Safe that implements the `getTradeableOrder` function.
-    ///      The `bytes` parameter is the encoded order that is passed to the CoW Protocol API.
+    ///      The `bytes` parameter is the abi-encoded order that is passed to the CoW Protocol API
+    ///      the signature bytes.
     event ConditionalOrderCreated(address indexed, bytes);
 
     /// @dev Using the `payload` supplied, create a conditional order that can be posted to the CoW Protocol API. The

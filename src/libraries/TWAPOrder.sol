@@ -10,10 +10,13 @@ import {ConditionalOrder} from "../interfaces/ConditionalOrder.sol";
 import {ConditionalOrderLib} from "../libraries/ConditionalOrderLib.sol";
 import {TWAPOrderMathLib} from "./TWAPOrderMathLib.sol";
 
+/// @title Time-weighted Average Order Library
+/// @author mfw78 <mfw78@rndlabs.xyz>
+/// @dev Structs, errors, and functions for time-weighted average orders.
 library TWAPOrder {
     using SafeCast for uint256;
 
-    // --- errors specific to this library
+    // --- errors specific to TWAP orders
 
     error InvalidSameToken();
     error InvalidToken();
@@ -38,10 +41,10 @@ library TWAPOrder {
         uint256 span;
     }
 
+    // --- constants
+
     /// @dev Update this if the TWAP bundle struct changes (32 * 9).
     uint256 constant TWAP_ORDER_BYTES_LENGTH = 288;
-
-    // --- constants
 
     /// @dev keccak256("conditionalorder.twap")
     bytes32 private constant APP_DATA = bytes32(0x6a1cb2f57824a1985d4bd2c556f30a048157ee9973efc0a4714604dde0a23104);
@@ -70,7 +73,6 @@ library TWAPOrder {
         // CoWProtocol enforces that each `orderUid` is only used once, this means that each part of the TWAP
         // order can only be executed once.
 
-        // return the order
         order = GPv2Order.Data({
             sellToken: self.sellToken,
             buyToken: self.buyToken,

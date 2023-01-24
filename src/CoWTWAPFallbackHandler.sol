@@ -8,9 +8,8 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 
 /// @title CoW TWAP Fallback Handler
 /// @author mfw78 <mfw78@rndlabs.xyz>
-/// @dev A fallback handler to enable TWAP orders on Safe, settling via CoW Protocol.
+/// @dev A fallback handler to enable TWAP conditional orders on Safe, settling via CoW Protocol.
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
-    uint256 internal constant _CONDITIONAL_ORDER_BYTES_LENGTH = 288;
 
     constructor(address _settlementContract) CoWFallbackHandler(_settlementContract) {}
 
@@ -28,8 +27,11 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         /// @dev This will revert if the order isn't signed or is cancelled.
         _onlySignedAndNotCancelled(payload);
 
-        /// @dev Decode the payload into a TWAP bundle and get the order.
-        /// `orderFor` will revert if there is no order for the current block.
+        /// @dev Decode the payload into a TWAP bundle and get the order. `orderFor` will revert if 
+        /// there is no current valid order.
+        /// NOTE: This will return an order even if the part of the TWAP bundle that is currently
+        /// valid is filled. This is safe as CoW Protocol ensures that each `orderUid` is only
+        /// settled once.
         return TWAPOrder.orderFor(abi.decode(payload, (TWAPOrder.Data)));
     }
 
@@ -60,6 +62,6 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
 
     /// @inheritdoc CoWFallbackHandler
     function CONDITIONAL_ORDER_BYTES_LENGTH() internal pure override returns (uint256) {
-        return _CONDITIONAL_ORDER_BYTES_LENGTH;
+        return TWAPOrder.TWAP_ORDER_BYTES_LENGTH;
     }
 }
