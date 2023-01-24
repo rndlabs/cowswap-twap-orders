@@ -53,14 +53,14 @@ library TWAPOrderMathLib {
                 /// `type(uint32).max` so the product of `frequency * (part + 1)` is ≈ 2⁵⁴.
                 /// Addition overflow: `startTime` is bounded by `block.timestamp` which is reasonably bounded by
                 /// `type(uint32).max` so the sum of `startTime + (frequency * (part + 1))` is ≈ 2⁵⁵.
-                /// Subtraction underflow: `frequency` is asserted to be > 0 so `(frequency * (part + 1)) - 1` > 0 
+                /// Subtraction underflow: `frequency` is asserted to be > 0 so `(frequency * (part + 1)) - 1` > 0
                 /// where `part` ∈ N ∪ {0}. As `part` will always be at least 0, the difference of
                 /// `startTime + (frequency * (part + 1)) - 1` shall always be positive.
                 return startTime + ((part + 1) * frequency) - 1;
             }
 
             /// @dev If the span is non-zero, then the order is valid for the span of the part.
-            /// Multiplication overflow: `part` is bounded by `numParts` which is bounded by `type(uint32).max` with 
+            /// Multiplication overflow: `part` is bounded by `numParts` which is bounded by `type(uint32).max` with
             /// `frequency` bounded by `365 days` which is smaller than `type(uint32).max` so the product of
             /// `part * frequency` is ≈ 2⁵⁴.
             /// Addition overflow: `startTime` is bounded by `block.timestamp` which is reasonably bounded by

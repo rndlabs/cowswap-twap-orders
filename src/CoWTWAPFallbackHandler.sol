@@ -10,7 +10,6 @@ import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 /// @author mfw78 <mfw78@rndlabs.xyz>
 /// @dev A fallback handler to enable TWAP conditional orders on Safe, settling via CoW Protocol.
 contract CoWTWAPFallbackHandler is CoWFallbackHandler {
-
     constructor(address _settlementContract) CoWFallbackHandler(_settlementContract) {}
 
     /// @inheritdoc CoWFallbackHandler
@@ -27,7 +26,7 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         /// @dev This will revert if the order isn't signed or is cancelled.
         _onlySignedAndNotCancelled(payload);
 
-        /// @dev Decode the payload into a TWAP bundle and get the order. `orderFor` will revert if 
+        /// @dev Decode the payload into a TWAP bundle and get the order. `orderFor` will revert if
         /// there is no current valid order.
         /// NOTE: This will return an order even if the part of the TWAP bundle that is currently
         /// valid is filled. This is safe as CoW Protocol ensures that each `orderUid` is only

@@ -73,7 +73,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @dev An internal function that is overriden by the child contract when implementing
-    /// the conditional order logic. Inheriting contracts should call this function to the 
+    /// the conditional order logic. Inheriting contracts should call this function to the
     /// signed order and check that it has not been cancelled.
     /// @param payload Any arbitrary data passed in to validate the order.
     /// @return A boolean indicating whether the order is valid. Reverts if the order has been
