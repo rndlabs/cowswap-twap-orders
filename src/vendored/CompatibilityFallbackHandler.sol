@@ -9,8 +9,7 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import {DefaultCallbackHandler} from "safe/handler/DefaultCallbackHandler.sol";
 import {GnosisSafe} from "safe/GnosisSafe.sol";
-
-import {ISignatureValidator} from "./ISignatureValidator.sol";
+import {ISignatureValidator} from "safe/interfaces/ISignatureValidator.sol";
 
 /// @title Compatibility Fallback Handler - fallback handler to provider compatibility between pre 1.3.0 and 1.3.0+ Safe contracts
 /// @author Richard Meissner - <richard@gnosis.pm>
@@ -32,7 +31,7 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
      * @param _signature Signature byte array associated with _data
      * @return a bool upon valid or invalid signature with corresponding _data
      */
-    function isValidSignature(bytes calldata _data, bytes calldata _signature)
+    function isValidSignature(bytes memory _data, bytes memory _signature)
         public
         view
         virtual
