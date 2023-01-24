@@ -20,7 +20,14 @@ library SafeLib {
     /// @param owners The list of owners of the Gnosis Safe.
     /// @param threshold The number of owners required to confirm a transaction.
     /// @return safe The Gnosis Safe proxy.
-    function createSafe(GnosisSafeProxyFactory factory, GnosisSafe singleton, address[] memory owners, uint256 threshold, address handler, uint256 nonce) internal returns (GnosisSafeProxy) {
+    function createSafe(
+        GnosisSafeProxyFactory factory,
+        GnosisSafe singleton,
+        address[] memory owners,
+        uint256 threshold,
+        address handler,
+        uint256 nonce
+    ) internal returns (GnosisSafeProxy) {
         return GnosisSafeProxy(
             factory.createProxyWithNonce(
                 address(singleton),

@@ -65,18 +65,7 @@ contract Fork is Base {
         signMessageLib = SignMessageLib(payable(vm.envAddress("SAFE_SIGN_MESSAGE_LIB")));
 
         // Create a new safe
-        proxy = GnosisSafeProxy(
-            payable(
-                SafeLib.createSafe(
-                    factory,
-                    singleton,
-                    owners,
-                    2,
-                    address(twapHandler),
-                    0
-                )
-            )
-        );
+        proxy = GnosisSafeProxy(payable(SafeLib.createSafe(factory, singleton, owners, 2, address(twapHandler), 0)));
 
         assertEq(
             vm.load(address(proxy), 0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5),
@@ -93,7 +82,7 @@ contract Fork is Base {
             sellToken: sellToken,
             buyToken: buyToken,
             receiver: address(0),
-            partSellAmount: 100000 * 10**18 / 25,
+            partSellAmount: 100000 * 10 ** 18 / 25,
             minPartLimit: uint256(100000e18) / uint256(1650),
             t0: block.timestamp,
             n: 25,
@@ -107,12 +96,7 @@ contract Fork is Base {
         deal(address(twap.buyToken), bob.addr, twap.minPartLimit * twap.n);
 
         // 4. Dispatch the TWAP order
-        createOrder(
-            GnosisSafe(payable(address(proxy))),
-            twapBytes,
-            twap.sellToken,
-            twap.partSellAmount * twap.n
-        );
+        createOrder(GnosisSafe(payable(address(proxy))), twapBytes, twap.sellToken, twap.partSellAmount * twap.n);
 
         // 5. Get the part of the TWAP
         GPv2Order.Data memory order = CoWTWAPFallbackHandler(address(proxy)).getTradeableOrder(twapBytes);
@@ -122,13 +106,8 @@ contract Fork is Base {
         vm.prank(vm.envAddress("ALLOW_LIST_MANAGER"));
         allowList.addSolver(solver.addr);
 
-        // 6. Settle the TWAP
-
+        // 7. Settle the TWAP
         vm.prank(solver.addr);
-        settlePart(
-            proxy,
-            order,
-            twapBytes
-        );
+        settlePart(proxy, order, twapBytes);
     }
 }

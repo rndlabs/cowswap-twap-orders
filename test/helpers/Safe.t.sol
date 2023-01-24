@@ -10,7 +10,6 @@ import {SignMessageLib} from "safe/libraries/SignMessageLib.sol";
 /// @title Safe - A helper contract for local integration testing with Gnosis Safe.
 /// @author mfw78 <mfw78@rndlabs.xyz>
 abstract contract Safe {
-
     GnosisSafe public singleton;
     GnosisSafeProxyFactory public factory;
     CompatibilityFallbackHandler public handler;

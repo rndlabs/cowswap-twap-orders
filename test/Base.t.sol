@@ -97,20 +97,20 @@ abstract contract Base is Test, Tokens, Safe, CoWProtocol {
         internal
     {
         createOrderWithEnv(
-            settlement,
-            relayer,
-            multisend,
-            signMessageLib,
-            safe,
-            conditionalOrder,
-            sellToken,
-            sellAmount
+            settlement, relayer, multisend, signMessageLib, safe, conditionalOrder, sellToken, sellAmount
         );
     }
 
-    function createOrderWithEnv(GPv2Settlement settlement, address relayer, MultiSend multiSend, SignMessageLib signMessageLib, GnosisSafe safe, bytes memory conditionalOrder, IERC20 sellToken, uint256 sellAmount)
-        internal
-    {
+    function createOrderWithEnv(
+        GPv2Settlement settlement,
+        address relayer,
+        MultiSend multiSend,
+        SignMessageLib signMessageLib,
+        GnosisSafe safe,
+        bytes memory conditionalOrder,
+        IERC20 sellToken,
+        uint256 sellAmount
+    ) internal {
         // Hash of the conditional order to sign
         bytes32 typedHash = ConditionalOrderLib.hash(conditionalOrder, settlement.domainSeparator());
 
