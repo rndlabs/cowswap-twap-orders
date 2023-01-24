@@ -1,7 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
-
-// TODO: vendoring notes about bytes parameters
 
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
