@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-// TODO: Analyse gas usage of assembly vs. abi.encodePacked in hash()
-
 import {IERC20, IERC20Metadata} from "@openzeppelin/interfaces/IERC20Metadata.sol";
 import {SafeCast} from "@openzeppelin/utils/math/SafeCast.sol";
 
