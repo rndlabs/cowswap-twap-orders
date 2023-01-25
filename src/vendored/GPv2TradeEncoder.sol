@@ -10,6 +10,7 @@ import {GPv2Signing} from "cowprotocol/mixins/GPv2Signing.sol";
 /// @author mfw78 <mfw78@rndlabs.xyz>
 /// @dev This library provides functions for encoding trade flags
 /// Encoding methodology is adapted from upstream at
+/* solhint-disable-next-line max-line-length */
 /// https://github.com/cowprotocol/contracts/blob/d043b0bfac7a09463c74dfe1613d0612744ed91c/src/contracts/libraries/GPv2Trade.sol
 library GPv2TradeEncoder {
     using GPv2Order for GPv2Order.Data;

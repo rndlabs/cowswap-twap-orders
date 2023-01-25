@@ -33,8 +33,8 @@ bytes32 constant CANCEL_ORDER_TYPE_HASH = hex"e2d395a4176e36febca53784f02b9bf31a
 /// @author CoW Protocol Developers + mfw78 <mfw78@rndlabs.xyz>
 /// @dev This interface is an extended version of `ConditionalOrder` as found at the repository:
 /// https://github.com/cowprotocol/conditional-smart-orders/blob/main/src/ConditionalOrder.sol. The differences are:
-/// - Event `ConditionalOrderCreated` contains both the `address` of the Safe that implements the `getTradeableOrder` function
-///   and the `bytes` parameter representing the conditional order.
+/// - Event `ConditionalOrderCreated` contains both the `address` of the Safe that implements the `getTradeableOrder` 
+///   function and the `bytes` parameter representing the conditional order.
 /// - Function `dispatch` dedicated to emitting the `ConditionalOrderCreated` event.
 /// - Function `getTradeableOrder` takes the `bytes` parameter representing the conditional order as input.
 interface ConditionalOrder {

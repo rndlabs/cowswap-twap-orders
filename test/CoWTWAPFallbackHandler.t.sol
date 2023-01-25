@@ -273,22 +273,22 @@ contract CoWTWAPFallbackHandlerTest is Base {
 
     function test_dispatch_RevertOnOrderSignedAndCancelled() public {
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(block.timestamp);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Verify that the order is valid - this shouldn't revert
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
 
         // Cancel the *TWAP order*
-        bytes32 twapDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        bytes32 twapDigest = ConditionalOrderLib.hash(oBytes, settlement.domainSeparator());
         bytes32 cancelDigest = ConditionalOrderLib.hashCancel(twapDigest, settlement.domainSeparator());
         safeSignMessage(GnosisSafe(payable(address(twapSafe))), abi.encode(cancelDigest));
 
         vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
-        twapSafe.dispatch(orderBytes);
+        twapSafe.dispatch(oBytes);
     }
 
     /// @dev Test creating a TWAP order (event emission)
@@ -301,20 +301,20 @@ contract CoWTWAPFallbackHandlerTest is Base {
         setFallbackHandler(safe2, twapSingleton);
         CoWTWAPFallbackHandler _twapSafe = CoWTWAPFallbackHandler(address(safe2));
 
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(block.timestamp);
+        bytes memory oBytes = abi.encode(o);
 
         // this should emit a ConditionalOrderCreated event
         vm.expectEmit(true, true, true, false);
-        emit ConditionalOrderCreated(address(_twapSafe), orderBytes);
+        emit ConditionalOrderCreated(address(_twapSafe), oBytes);
 
         // Everything here happens in a batch
         createOrder(
-            GnosisSafe(payable(address(_twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n
+            GnosisSafe(payable(address(_twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n
         );
 
         // Check that the order signed by the safe.
-        bytes32 orderDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        bytes32 orderDigest = ConditionalOrderLib.hash(oBytes, settlement.domainSeparator());
         assertTrue(_twapSafe.isValidSignature(orderDigest, "") == bytes4(GPv2EIP1271.MAGICVALUE));
 
         // Check that the order is not cancelled
@@ -334,22 +334,22 @@ contract CoWTWAPFallbackHandlerTest is Base {
 
     function test_getTradeableOrder_RevertOnOrderSignedAndCancelled() public {
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(block.timestamp);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Verify that the order is valid - this shouldn't revert
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
 
         // Cancel the *TWAP order*
-        bytes32 twapDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        bytes32 twapDigest = ConditionalOrderLib.hash(oBytes, settlement.domainSeparator());
         bytes32 cancelDigest = ConditionalOrderLib.hashCancel(twapDigest, settlement.domainSeparator());
         safeSignMessage(GnosisSafe(payable(address(twapSafe))), abi.encode(cancelDigest));
 
         vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
     }
 
     function test_getTradeableOrder_FuzzRevertIfBeforeStart(uint256 startTime, uint256 currentTime) public {
@@ -359,23 +359,23 @@ contract CoWTWAPFallbackHandlerTest is Base {
         vm.assume(currentTime < startTime);
 
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to start time to make sure the order is valid
         vm.warp(startTime);
 
         // Verify that the order is valid - this shouldn't revert
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
 
         // Warp to current time
         vm.warp(currentTime);
 
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
     }
 
     function test_getTradeableOrder_FuzzRevertIfExpired(uint256 startTime, uint256 currentTime) public {
@@ -385,23 +385,23 @@ contract CoWTWAPFallbackHandlerTest is Base {
         vm.assume(currentTime >= startTime + (FREQUENCY * NUM_PARTS));
 
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to start time to make sure the order is valid
         vm.warp(startTime);
 
         // Verify that the order is valid - this shouldn't revert
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
 
         // Warp to expiry
         vm.warp(currentTime);
 
         vm.expectRevert(ConditionalOrder.OrderExpired.selector);
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
     }
 
     function test_getTradeableOrder_FuzzRevertIfOutsideSpan(uint256 startTime, uint256 currentTime) public {
@@ -415,22 +415,22 @@ contract CoWTWAPFallbackHandlerTest is Base {
         // guard against no reversion when within span
         vm.assume((currentTime - startTime) % FREQUENCY >= SPAN);
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         vm.warp(startTime);
 
         // Verify that the order is valid - this shouldn't revert
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
 
         // Warp to within the span
         vm.warp(currentTime);
 
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
-        twapSafe.getTradeableOrder(orderBytes);
+        twapSafe.getTradeableOrder(oBytes);
     }
 
     function test_getTradeableOrder_e2e_fuzz(uint256 startTime, uint256 currentTime) public {
@@ -444,42 +444,42 @@ contract CoWTWAPFallbackHandlerTest is Base {
         // guard against reversion outside of the span
         vm.assume((currentTime - startTime) % FREQUENCY < SPAN);
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to the current time
         vm.warp(currentTime);
 
         // This should not revert
-        GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(oBytes);
 
         // Verify that the order is valid - this shouldn't revert
         assertTrue(
-            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), oBytes)
                 == GPv2EIP1271.MAGICVALUE
         );
     }
 
     function test_isValidSignature_RevertIfOrderNotSigned() public {
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp + 1);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(block.timestamp + 1);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to within the span
-        vm.warp(order.t0);
+        vm.warp(o.t0);
 
         // This should not revert
-        GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(oBytes);
 
         // Verify that the order is valid - this shouldn't revert
         assertTrue(
-            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), oBytes)
                 == GPv2EIP1271.MAGICVALUE
         );
 
@@ -497,33 +497,33 @@ contract CoWTWAPFallbackHandlerTest is Base {
 
     function test_isValidSignature_RevertIfSignedAndCancelled() public {
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(block.timestamp + 1);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(block.timestamp + 1);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to within the span
-        vm.warp(order.t0);
+        vm.warp(o.t0);
 
         // This should not revert
-        GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(oBytes);
 
         // Verify that the order is valid - this shouldn't revert
         assertTrue(
-            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), oBytes)
                 == GPv2EIP1271.MAGICVALUE
         );
 
         // Cancel the order
-        bytes32 twapDigest = ConditionalOrderLib.hash(orderBytes, settlement.domainSeparator());
+        bytes32 twapDigest = ConditionalOrderLib.hash(oBytes, settlement.domainSeparator());
         bytes32 cancelDigest = ConditionalOrderLib.hashCancel(twapDigest, settlement.domainSeparator());
         safeSignMessage(GnosisSafe(payable(address(twapSafe))), abi.encode(cancelDigest));
 
         // This should revert
         bytes32 hash = GPv2Order.hash(part, settlement.domainSeparator());
         vm.expectRevert(ConditionalOrder.OrderCancelled.selector);
-        twapSafe.isValidSignature(hash, orderBytes);
+        twapSafe.isValidSignature(hash, oBytes);
     }
 
     function test_isValidSignature_FuzzRevertIfBeforeStart(uint256 startTime, uint256 currentTime) public {
@@ -532,18 +532,18 @@ contract CoWTWAPFallbackHandlerTest is Base {
         // force revert before start
         vm.assume(currentTime < startTime);
 
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to before the start
         vm.warp(currentTime);
 
         // This should revert
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
-        twapSafe.isValidSignature(keccak256("cow to alpha centauri"), orderBytes);
+        twapSafe.isValidSignature(keccak256("cow to alpha centauri"), oBytes);
     }
 
     function test_isValidSignature_FuzzRevertIfExpired(uint256 startTime, uint256 currentTime) public {
@@ -552,18 +552,18 @@ contract CoWTWAPFallbackHandlerTest is Base {
         // force revert after expiry
         vm.assume(currentTime >= startTime + (FREQUENCY * NUM_PARTS));
 
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to after the expiry
         vm.warp(currentTime);
 
         // This should revert
         vm.expectRevert(ConditionalOrder.OrderExpired.selector);
-        twapSafe.isValidSignature(keccak256("cow over the moon"), orderBytes);
+        twapSafe.isValidSignature(keccak256("cow over the moon"), oBytes);
     }
 
     function test_isValidSignature_FuzzRevertIfOutsideSpan(uint256 startTime, uint256 currentTime) public {
@@ -577,18 +577,18 @@ contract CoWTWAPFallbackHandlerTest is Base {
         // force revert outside of the span
         vm.assume((currentTime - startTime) % FREQUENCY >= SPAN);
 
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to where the order is not valid
         vm.warp(currentTime);
 
         // This should revert
         vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
-        twapSafe.isValidSignature(keccak256("cow to alpha centauri"), orderBytes);
+        twapSafe.isValidSignature(keccak256("cow to alpha centauri"), oBytes);
     }
 
     function test_isValidSignature_e2e_fuzz(uint256 startTime, uint256 currentTime) public {
@@ -602,21 +602,21 @@ contract CoWTWAPFallbackHandlerTest is Base {
         // guard against reversion outside of the span
         vm.assume((currentTime - startTime) % FREQUENCY < SPAN);
         // Revert when the order is signed by the safe and cancelled
-        TWAPOrder.Data memory order = _twapTestBundle(startTime);
-        bytes memory orderBytes = abi.encode(order);
+        TWAPOrder.Data memory o = _twapTestBundle(startTime);
+        bytes memory oBytes = abi.encode(o);
 
         // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), orderBytes, order.sellToken, order.partSellAmount * order.n);
+        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Warp to the current time
         vm.warp(currentTime);
 
         // This should not revert
-        GPv2Order.Data memory part = twapSafe.getTradeableOrder(orderBytes);
+        GPv2Order.Data memory part = twapSafe.getTradeableOrder(oBytes);
 
         // Verify that the order is valid - this shouldn't revert
         assertTrue(
-            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), orderBytes)
+            twapSafe.isValidSignature(GPv2Order.hash(part, settlement.domainSeparator()), oBytes)
                 == GPv2EIP1271.MAGICVALUE
         );
     }
@@ -749,21 +749,21 @@ contract CoWTWAPFallbackHandlerTest is Base {
         uint256 span
     ) public {
         // --- Implicit assumptions
-        // currentTime is always set to the current block timestamp in the TWAP order, so we can assume that it is less
+        // `currentTime` is always set to the `block.timestamp` in the TWAP order, so we can assume that it is less
         // than the max uint32 value.
         vm.assume(currentTime <= type(uint32).max);
 
         // --- Assertions
-        // number of parts is asserted to be less than the max uint32 value in the TWAP order, so we can assume that it is
-        // less than the max uint32 value.
+        // number of parts is asserted to be less than the max uint32 value in the TWAP order, so we can assume that
+        // it is less than the max uint32 value.
         numParts = bound(numParts, 2, type(uint32).max);
 
         // frequency is asserted to be less than 365 days worth of seconds in the TWAP order, and at least 1 second
         vm.assume(frequency >= 1 && frequency <= 365 days);
 
-        // The span is defined as the number of seconds that the TWAP order is valid for within each period. If the span
-        // is 0, then the TWAP order is valid for the entire period. We can assume that the span is less than or equal
-        // to the frequency.
+        // The span is defined as the number of seconds that the TWAP order is valid for within each period. If the
+        // span is 0, then the TWAP order is valid for the entire period. We can assume that the span is less than or
+        // equal to the frequency.
         vm.assume(span <= frequency);
 
         // --- In-function revert conditions

@@ -122,6 +122,7 @@ abstract contract CoWFallbackHandler is CompatibilityFallbackHandler, Conditiona
     }
 
     /// @dev Returns hash of a message that can be signed by owners. This has been copied from
+    /* solhint-disable-next-line max-line-length */
     /// https://github.com/safe-global/safe-contracts/blob/5abc0bb25e7bffce8c9e53de47a392229540acf9/contracts/handler/CompatibilityFallbackHandler.sol
     /// however `safe` parameter has been replaced by the `domainSeparator` parameter. This allows for
     /// the `domainSeparator` to be cached in the calling routine, saving gas.
