@@ -41,8 +41,8 @@ contract Fork is Base {
         sellToken = IERC20(vm.envAddress("DAI"));
         buyToken = IERC20(vm.envAddress("WETH"));
 
-        string memory MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-        vm.createSelectFork(MAINNET_RPC_URL);
+        string memory ETH_RPC_URL = vm.envString("ETH_RPC_URL");
+        vm.createSelectFork(ETH_RPC_URL);
 
         settlement = GPv2Settlement(payable(vm.envAddress("SETTLEMENT")));
         relayer = vm.envAddress("RELAYER");
