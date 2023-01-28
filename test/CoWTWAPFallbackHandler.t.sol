@@ -309,9 +309,7 @@ contract CoWTWAPFallbackHandlerTest is Base {
         emit ConditionalOrderCreated(address(_twapSafe), oBytes);
 
         // Everything here happens in a batch
-        createOrder(
-            GnosisSafe(payable(address(_twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n
-        );
+        createOrder(GnosisSafe(payable(address(_twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
 
         // Check that the order signed by the safe.
         bytes32 orderDigest = ConditionalOrderLib.hash(oBytes, settlement.domainSeparator());
