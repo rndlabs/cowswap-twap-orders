@@ -1,9 +1,43 @@
+import { ActionFn, BlockEvent, Context, Event, TransactionEvent } from "@tenderly/actions";
 import { Order, OrderBalance, OrderKind, computeOrderUid } from "@cowprotocol/contracts";
 
 import axios from "axios";
 import { ethers } from "ethers";
-import { ConditionalOrder__factory } from "./types";
-import { Registry } from "./register";
+import { ConditionalOrder__factory, GPv2Settlement__factory } from "./types";
+import { Registry, OrderStatus } from "./register";
+import { Logger } from "ethers/lib/utils";
+
+export const checkForSettlement: ActionFn = async (context: Context, event: Event) => {
+  const transactionEvent = event as TransactionEvent;
+  const iface = GPv2Settlement__factory.createInterface();
+
+  const registry = await Registry.load(context, transactionEvent.network);
+  console.log(`Current registry: ${JSON.stringify(Array.from(registry.safeOrders.entries()))}`);
+
+  transactionEvent.logs.forEach((log) => {
+    if (log.topics[0] === iface.getEventTopic("Trade")) {
+      const t = iface.decodeEventLog("Trade", log.data, log.topics);
+      const { owner, orderUid } = t;
+
+      // Check if the owner is in the registry
+      if (registry.safeOrders.has(owner)) {
+        // Get the conditionalOrders for the owner
+        const conditionalOrders = registry.safeOrders.get(owner);
+        // Iterate over the conditionalOrders and update the status of the orderUid
+        conditionalOrders?.forEach((conditionalOrder) => {
+          // Check if the orderUid is in the conditionalOrder
+          if (conditionalOrder.orders.has(orderUid)) {
+            // Update the status of the orderUid to FILLED
+            conditionalOrder.orders.set(orderUid, OrderStatus.FILLED);
+          }
+        });
+      }
+    }
+  });
+
+  console.log(`Updated registry: ${JSON.stringify(Array.from(registry.safeOrders.entries()))}`);
+  await registry.write();
+}
 
 export const checkForAndPlaceOrder: ActionFn = async (
   context: Context,

@@ -21,6 +21,23 @@ actions:
             status:
             - mined
           type: transaction
+      watch_settlements:
+        description: Watch for settled trades and update the state
+        function: watch:checkForSettlement
+        trigger:
+          transaction:
+            filters:
+            - logEmitted:
+                startsWith:
+                - 0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17
+              network:
+              - 1
+              - 5
+              - 100
+              status: success
+            status:
+            - mined
+          type: transaction
       watch_orders:
         description: Checks on every block if the registered smart order contract
           wants to trade
