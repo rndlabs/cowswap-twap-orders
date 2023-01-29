@@ -1,6 +1,6 @@
 import { Command, Option, InvalidOptionArgumentError } from 'commander'
 import { BigNumberish, ethers, Signer, utils } from 'ethers'
-import { MetaTransactionData, OperationType } from '@safe-global/safe-core-sdk-types'
+import { MetaTransactionData, OperationType, SafeTransactionDataPartial } from '@safe-global/safe-core-sdk-types'
 import EthersAdapter from '@safe-global/safe-ethers-lib'
 import SafeServiceClient from '@safe-global/safe-service-client'
 import Safe from '@safe-global/safe-core-sdk'
@@ -10,12 +10,12 @@ import { GPv2Settlement__factory, SignMessageLib__factory, ERC20__factory, Condi
 
 dotenv.config()
 
-const SIGN_MESSAGE_LIB = '0xa65387f16b013cf2af4605ad8aa5ec25a2cba3a2'
+const SIGN_MESSAGE_LIB = '0xA65387F16B013cf2Af4605Ad8aA5ec25a2cbA3a2'
 const SETTLEMENT = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'
 const RELAYER = '0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'
 
 const CONDITIONAL_ORDER_TYPEHASH = '0x59a89a42026f77464983113514109ddff8e510f0e62c114303617cb5ca97e091'
-// const CANCELLED_CONDITIONAL_ORDER_TYPEHASH = '0xe2d395a4176e36febca53784f02b9bf31a44db36d5688fe8fc4306e6dfa54148'
+const CANCELLED_CONDITIONAL_ORDER_TYPEHASH = '0xe2d395a4176e36febca53784f02b9bf31a44db36d5688fe8fc4306e6dfa54148'
 const TWAP_ORDER_STRUCT = "tuple(address sellToken,address buyToken,address receiver,uint256 partSellAmount,uint256 minPartLimit,uint256 t0,uint256 n,uint256 t,uint256 span)"
 
 interface TWAPData {
@@ -70,6 +70,7 @@ const getTxServiceUrl = (chainId: number) => {
     }
 }
 
+
 /**
  * Returns a SafeServiceClient and Safe instance
  * @param safeAddress Address of the Safe
@@ -112,6 +113,58 @@ const encodeTwap = async (data: TWAPData, signer: Signer): Promise<{ digest: str
     ))
 
     return { digest, payload }
+}
+
+const encodeCancelOrder = async (orderHash: string, signer: Signer): Promise<{ digest: string, payload: string }> => {
+    const payload = utils.defaultAbiCoder.encode(['bytes32'], [orderHash])
+
+    // get the domain separator from the settlement contract using ethers.Contract
+    const settlementContract = GPv2Settlement__factory.connect(SETTLEMENT, signer);
+    const domainSeparator = await settlementContract.domainSeparator()
+
+    const structHash = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+            ['bytes32', 'bytes32'],
+            [CANCELLED_CONDITIONAL_ORDER_TYPEHASH, payload]
+        )
+    )
+
+    const digest = utils.keccak256(ethers.utils.solidityPack(
+        ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
+        ['0x19', '0x01', domainSeparator, structHash]
+    ))
+
+    return { digest, payload }
+}
+
+async function cancelOrder(options: CancelOrderCliOptions) {
+    const { safeService, safe, signer } = await getSafeAndService(options)
+
+    const { digest } = await encodeCancelOrder(options.orderHash, signer)
+
+    const signatureTx: MetaTransactionData = {
+        to: SIGN_MESSAGE_LIB,
+        data: SignMessageLib__factory.createInterface().encodeFunctionData('signMessage', [digest]),
+        value: "0",
+        operation: OperationType.DelegateCall
+    }
+
+    const safeTransaction = await safe.createTransaction({
+        safeTransactionData: [signatureTx], options: { nonce: await safeService.getNextNonce(options.safeAddress) }
+    })
+    const safeTxHash = await safe.getTransactionHash(safeTransaction)
+    const senderSignature = await safe.signTransactionHash(safeTxHash)
+    const t = {
+        safeAddress: options.safeAddress,
+        safeTransactionData: safeTransaction.data,
+        safeTxHash,
+        senderAddress: await signer.getAddress(),
+        senderSignature: senderSignature.data,
+    }
+    console.log(t)
+    await safeService.proposeTransaction(t)
+
+    console.log(`Submitted order cancellation for: ${options.orderHash}`)
 }
 
 async function createTwapOrder(options: TWAPCliOptions) {
@@ -284,10 +337,8 @@ async function main() {
 
     program.command('cancel-order')
         .description('Cancel an order')
-        .option('--order-id <orderId>', 'ID of the order to cancel')
-        .action(async (options) => {
-            console.log(options)
-        })
+        .option('--order-hash <orderHash>', 'ID of the order to cancel')
+        .action(cancelOrder)
 
     await program.parseAsync(process.argv)
 }
