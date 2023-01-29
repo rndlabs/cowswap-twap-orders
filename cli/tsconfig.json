@@ -3,7 +3,6 @@
   "compilerOptions": {
     "module": "commonjs",
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
     "outDir": "out",
     "sourceMap": true,
     "strict": true,
