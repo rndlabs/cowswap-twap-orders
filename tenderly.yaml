@@ -1,0 +1,37 @@
+account_id: 365d1c08-1187-453c-ace5-c0cc4e53a41f
+actions:
+  mfw78/rndlabs:
+    runtime: v1
+    sources: actions
+    specs:
+      register_order:
+        description: Listens to events that index new instances of smart order contracts
+        function: register:addContract
+        trigger:
+          transaction:
+            filters:
+            - logEmitted:
+                startsWith:
+                - 0x4af0ada67198226ad089fb87300dc01d76fb8883a59e6642c05a2f01dfd1eb67
+              network:
+              - 1
+              - 5
+              - 100
+              status: success
+            status:
+            - mined
+          type: transaction
+      watch_orders:
+        description: Checks on every block if the registered smart order contract
+          wants to trade
+        function: watch:checkForAndPlaceOrder
+        trigger:
+          block:
+            blocks: 5
+            network:
+            - 1
+            - 5
+            - 100
+          type: block
+project_slug: rndlabs
+provider: ""

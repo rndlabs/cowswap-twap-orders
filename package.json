@@ -1,0 +1,37 @@
+{
+  "name": "conditional-smart-orders",
+  "version": "0.0.1",
+  "description": "Repository showcasing the power of CoW Protocol smart orders",
+  "author": {
+    "name": "mfw78",
+    "email": "mfw78@rndlabs.xyz"
+  },
+  "contributors": [
+    {
+      "name": "Cow Protocol"
+    }
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^2.8.1",
+    "prettier-plugin-solidity": "^1.0.0",
+    "solhint": "^3.3.7",
+    "solhint-plugin-prettier": "^0.0.5",
+    "eslint": "8.27.0"
+  },
+  "scripts": {
+    "fmt": "yarn fmt:contracts && yarn fmt:actions && yarn fmt:cli",
+    "lint": "yarn lint:contracts && yarn lint:actions && yarn lint:cli",
+    "build": "forge buid && yarn build:actions && yarn build:cli",
+    "fmt:contracts": "forge fmt",
+    "lint:contracts": "solhint 'src/**/*.sol' 'test/**/*.sol'",
+    "fmt:actions": "prettier ./actions -w",
+    "build:actions": "cd actions && npm ci && yarn run build",
+    "lint:actions": "eslint && prettier --check ./actions",
+    "test:actions": "yarn build:actions && ts-node actions/test/test_register.ts",
+    "fmt:cli": "prettier ./cli -w",
+    "lint:cli": "eslint && prettier --check ./cli",
+    "build:cli": "cd cli && npm ci && yarn run build",
+    "check-deployment": "yarn build:actions && ts-node actions/test/run_local.ts"
+  }
+}
