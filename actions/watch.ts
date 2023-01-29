@@ -1,4 +1,4 @@
-import { ActionFn, BlockEvent, Context, Event } from "@tenderly/actions";
+import { Order, OrderBalance, OrderKind, computeOrderUid } from "@cowprotocol/contracts";
 
 import axios from "axios";
 import { ethers } from "ethers";
@@ -14,23 +14,86 @@ export const checkForAndPlaceOrder: ActionFn = async (
   const chainContext = await ChainContext.create(context, blockEvent.network);
 
   // enumerate all the safeOrders
-  for (const [safeAddress, payloads] of registry.safeOrders.entries()) {
+  for (const [safeAddress, conditionalOrders] of registry.safeOrders.entries()) {
     console.log(`Checking ${safeAddress}...`);
     
-    // enumerate all the payloads
-    for (const payload of payloads) {
-      console.log(`Checking payload ${payload}...`);
+    // enumerate all the `ConditionalOrder`s for a given safe
+    for (const conditionalOrder of conditionalOrders) {
+      console.log(`Checking payload ${conditionalOrder.payload}...`);
       const contract = ConditionalOrder__factory.connect(safeAddress, chainContext.provider);
       try {
-        const order = await contract.getTradeableOrder(payload);
-        console.log(`Placing Order: ${order}`);
-        await placeOrder(
-          { ...order, from: safeAddress, payload },
-          chainContext.api_url
+        const order: Order = { 
+          ...await contract.callStatic.getTradeableOrder(conditionalOrder.payload),
+          kind: OrderKind.SELL,
+          sellTokenBalance: OrderBalance.ERC20,
+          buyTokenBalance: OrderBalance.ERC20
+        }
+
+        // calculate the orderUid
+        const orderUid = computeOrderUid(
+          {
+            name: "Gnosis Protocol",
+            version: "v2",
+            chainId: blockEvent.network,
+            verifyingContract: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+          },
+          {
+            ...order,
+            receiver: (order.receiver === ethers.constants.AddressZero ? undefined : order.receiver)
+          },
+          safeAddress
         );
-      } catch (e) {
+
+        // if the orderUid has not been submitted, or filled, then place the order
+        if (!conditionalOrder.orders.has(orderUid)) {
+          console.log(`Placing orderuid ${orderUid} with Order: ${JSON.stringify(order)}`);
+
+          await placeOrder(
+            { ...order, from: safeAddress, payload: conditionalOrder.payload },
+            chainContext.api_url
+          );
+
+          conditionalOrder.orders.set(orderUid, OrderStatus.SUBMITTED);
+        } else {
+          console.log(`OrderUid ${orderUid} status: ${conditionalOrder.orders.get(orderUid)}`);
+        }
+      } catch (e: any) {
+        if (e.code === Logger.errors.CALL_EXCEPTION) {
+          switch (e.errorName) {
+            case "OrderNotValid":
+              // The conditional order has not expired, or been cancelled, but the order is not valid
+              // For example, with TWAPs, this may be after `span` seconds have passed in the epoch.
+              continue;
+            case "OrderExpired":
+              console.log(`Conditional order on safe ${safeAddress} expired. Unfilled orders:`)
+              printUnfilledOrders(conditionalOrder.orders);
+              console.log("Removing conditional order from registry");
+              conditionalOrders.delete(conditionalOrder);
+              continue;
+            case "OrderCancelled":
+              console.log(`Conditional order on safe ${safeAddress} cancelled. Unfilled orders:`)
+              printUnfilledOrders(conditionalOrder.orders);
+              console.log("Removing conditional order from registry");
+              conditionalOrders.delete(conditionalOrder);
+              continue;
+          }
+        }
+
         console.log(`Not tradeable (${e})`);
       }
+    }
+  }
+
+  // Update the registry
+  await registry.write();
+};
+
+// Print a list of all the orders that were placed and not filled
+export const printUnfilledOrders = (orders: Map<string, OrderStatus>) => {
+  console.log("Unfilled orders:");
+  for (const [orderUid, status] of orders.entries()) {
+    if (status === OrderStatus.SUBMITTED) {
+      console.log(orderUid);
     }
   }
 };
@@ -79,6 +142,7 @@ async function placeOrder(order: any, api_url: string) {
     } else {
       console.log(error);
     }
+    throw error;
   }
 }
 
