@@ -3,6 +3,7 @@ import { BigNumberish, ethers, providers, utils } from "ethers";
 import {
   MetaTransactionData,
   OperationType,
+  SafeTransaction,
 } from "@safe-global/safe-core-sdk-types";
 import EthersAdapter from "@safe-global/safe-ethers-lib";
 import SafeServiceClient from "@safe-global/safe-service-client";
@@ -193,19 +194,30 @@ async function setFallbackHandler(options: SetFallbackHandlerCliOptions) {
     options.handler
   );
 
-  const safeTxHash = await safe.getTransactionHash(safeTransaction);
+  console.log(`Proposing setFallbackHandler Transaction: ${JSON.stringify(safeTransaction.data)}`)
+  await proposeTransaction(safe, safeService, safeTransaction, signer);
+}
+
+/**
+ * Propose a transaction to a Safe
+ * @param safe on which the transaction is proposed
+ * @param safeService API client
+ * @param tx transaction to propose
+ * @param signer used to propose the transaction
+ */
+async function proposeTransaction(safe: Safe, safeService: SafeServiceClient, tx: SafeTransaction, signer: ethers.Signer) {
+  const safeTxHash = await safe.getTransactionHash(tx);
   const senderSignature = await safe.signTransactionHash(safeTxHash);
   await safeService.proposeTransaction({
-    safeAddress: options.safeAddress,
-    safeTransactionData: safeTransaction.data,
+    safeAddress: safe.getAddress(),
+    safeTransactionData: tx.data,
     safeTxHash,
     senderAddress: await signer.getAddress(),
     senderSignature: senderSignature.data,
   });
 
-  console.log(`Submitted setFallbackHandler Transaction hash: ${safeTxHash}`);
+  console.log(`Submitted Transaction hash: ${safeTxHash}`);
 }
-
 /**
  * Cancel a `ConditionalOrder` by signing an EIP-712 message of `CancelOrder(bytes32 order)`
  * @param options CLI and `ConditionalOrder` options
@@ -232,17 +244,9 @@ async function cancelOrder(options: CancelOrderCliOptions) {
     safeTransactionData: [signatureTx],
     options: { nonce: await safeService.getNextNonce(options.safeAddress) },
   });
-  const safeTxHash = await safe.getTransactionHash(safeTransaction);
-  const senderSignature = await safe.signTransactionHash(safeTxHash);
-  await safeService.proposeTransaction({
-    safeAddress: options.safeAddress,
-    safeTransactionData: safeTransaction.data,
-    safeTxHash,
-    senderAddress: await signer.getAddress(),
-    senderSignature: senderSignature.data,
-  });
 
-  console.log(`Submitted order cancellation for: ${options.orderHash}`);
+  console.log(`Proposing cancelOrder Transaction: ${JSON.stringify(safeTransaction.data)}`)
+  await proposeTransaction(safe, safeService, safeTransaction, signer);
 }
 
 /**
@@ -323,18 +327,9 @@ async function createTwapOrder(options: TWAPCliOptions) {
     safeTransactionData,
     options: { nonce: await safeService.getNextNonce(options.safeAddress) },
   });
-  const safeTxHash = await safe.getTransactionHash(safeTransaction);
-  const senderSignature = await safe.signTransactionHash(safeTxHash);
-  await safeService.proposeTransaction({
-    safeAddress: options.safeAddress,
-    safeTransactionData: safeTransaction.data,
-    safeTxHash,
-    senderAddress: await signer.getAddress(),
-    senderSignature: senderSignature.data,
-  });
 
-  console.log("Submitted transaction to the Safe");
-  console.log(`SafeTxHash: ${safeTxHash}`);
+  console.log(`Proposing TWAP Order Transaction: ${JSON.stringify(safeTransaction.data)}`)
+  await proposeTransaction(safe, safeService, safeTransaction, signer);
   console.log(`Conditional order hash for cancelling: ${digest}`);
 }
 
