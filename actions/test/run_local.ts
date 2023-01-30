@@ -1,13 +1,14 @@
 import { TestBlockEvent, TestRuntime } from "@tenderly/actions-test";
 import { checkForAndPlaceOrder } from "../watch";
-import { Registry } from "../register";
+import { ConditionalOrder, OrderStatus, Registry } from "../register";
 import { ethers } from "ethers";
 
 const main = async () => {
   const testRuntime = new TestRuntime();
   const testEvent = new TestBlockEvent();
 
-  const contractUnderTest = process.argv[2];
+  const safeUndertest = process.argv[2];
+  const payload = process.argv[3];
   const node_url = process.env["ETH_RPC_URL"];
   if (!node_url) {
     throw "Please specify your node url via the ETH_RPC_URL env variable";
@@ -21,7 +22,7 @@ const main = async () => {
 
   // Register the contract that was passed in from the command line to be watched
   const registry = await Registry.load(testRuntime.context, testEvent.network);
-  // registry.contracts.push(contractUnderTest);
+  registry.safeOrders.set(safeUndertest, new Set<ConditionalOrder>([{ payload, orders: new Map<string, OrderStatus>() }]));
   await registry.write();
 
   // run action

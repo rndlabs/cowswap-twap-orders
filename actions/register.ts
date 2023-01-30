@@ -112,7 +112,7 @@ export class Registry {
 
 // Utilities for serializing and deserializing Maps and Sets
 
-function replacer(_key: any, value: any) {
+export function replacer(_key: any, value: any) {
   if (value instanceof Map) {
     return {
       dataType: "Map",
@@ -128,7 +128,7 @@ function replacer(_key: any, value: any) {
   }
 }
 
-function reviver(_key: any, value: any) {
+export function reviver(_key: any, value: any) {
   if (typeof value === "object" && value !== null) {
     if (value.dataType === "Map") {
       return new Map(value.value);
