@@ -182,7 +182,28 @@ const encodeCancelOrder = async (
   return { digest, payload };
 };
 
-    return { digest, payload }
+/**
+ * Set the fallback handler of a Safe
+ * @param options CLI and fallback handler options
+ */
+async function setFallbackHandler(options: SetFallbackHandlerCliOptions) {
+  const { safeService, safe, signer } = await getSafeAndService(options);
+
+  const safeTransaction = await safe.createEnableFallbackHandlerTx(
+    options.handler
+  );
+
+  const safeTxHash = await safe.getTransactionHash(safeTransaction);
+  const senderSignature = await safe.signTransactionHash(safeTxHash);
+  await safeService.proposeTransaction({
+    safeAddress: options.safeAddress,
+    safeTransactionData: safeTransaction.data,
+    safeTxHash,
+    senderAddress: await signer.getAddress(),
+    senderSignature: senderSignature.data,
+  });
+
+  console.log(`Submitted setFallbackHandler Transaction hash: ${safeTxHash}`);
 }
 
 /**
@@ -461,6 +482,11 @@ async function main() {
     )
     .action(createTwapOrder);
 
+  program
+    .command("set-fallback-handler")
+    .description("Set the fallback handler of the Safe")
+    .option("--handler <handler>", "Address of the fallback handler")
+    .action(setFallbackHandler);
 
   program
     .command("cancel-order")
