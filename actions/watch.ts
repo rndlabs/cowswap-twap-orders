@@ -1,5 +1,16 @@
-import { ActionFn, BlockEvent, Context, Event, TransactionEvent } from "@tenderly/actions";
-import { Order, OrderBalance, OrderKind, computeOrderUid } from "@cowprotocol/contracts";
+import {
+  ActionFn,
+  BlockEvent,
+  Context,
+  Event,
+  TransactionEvent,
+} from "@tenderly/actions";
+import {
+  Order,
+  OrderBalance,
+  OrderKind,
+  computeOrderUid,
+} from "@cowprotocol/contracts";
 
 import axios from "axios";
 import { ethers } from "ethers";
@@ -7,12 +18,19 @@ import { ConditionalOrder__factory, GPv2Settlement__factory } from "./types";
 import { Registry, OrderStatus } from "./register";
 import { Logger } from "ethers/lib/utils";
 
-export const checkForSettlement: ActionFn = async (context: Context, event: Event) => {
+export const checkForSettlement: ActionFn = async (
+  context: Context,
+  event: Event
+) => {
   const transactionEvent = event as TransactionEvent;
   const iface = GPv2Settlement__factory.createInterface();
 
   const registry = await Registry.load(context, transactionEvent.network);
-  console.log(`Current registry: ${JSON.stringify(Array.from(registry.safeOrders.entries()))}`);
+  console.log(
+    `Current registry: ${JSON.stringify(
+      Array.from(registry.safeOrders.entries())
+    )}`
+  );
 
   transactionEvent.logs.forEach((log) => {
     if (log.topics[0] === iface.getEventTopic("Trade")) {
@@ -35,9 +53,13 @@ export const checkForSettlement: ActionFn = async (context: Context, event: Even
     }
   });
 
-  console.log(`Updated registry: ${JSON.stringify(Array.from(registry.safeOrders.entries()))}`);
+  console.log(
+    `Updated registry: ${JSON.stringify(
+      Array.from(registry.safeOrders.entries())
+    )}`
+  );
   await registry.write();
-}
+};
 
 export const checkForAndPlaceOrder: ActionFn = async (
   context: Context,
@@ -48,20 +70,28 @@ export const checkForAndPlaceOrder: ActionFn = async (
   const chainContext = await ChainContext.create(context, blockEvent.network);
 
   // enumerate all the safeOrders
-  for (const [safeAddress, conditionalOrders] of registry.safeOrders.entries()) {
+  for (const [
+    safeAddress,
+    conditionalOrders,
+  ] of registry.safeOrders.entries()) {
     console.log(`Checking ${safeAddress}...`);
-    
+
     // enumerate all the `ConditionalOrder`s for a given safe
     for (const conditionalOrder of conditionalOrders) {
       console.log(`Checking payload ${conditionalOrder.payload}...`);
-      const contract = ConditionalOrder__factory.connect(safeAddress, chainContext.provider);
+      const contract = ConditionalOrder__factory.connect(
+        safeAddress,
+        chainContext.provider
+      );
       try {
-        const order: Order = { 
-          ...await contract.callStatic.getTradeableOrder(conditionalOrder.payload),
+        const order: Order = {
+          ...(await contract.callStatic.getTradeableOrder(
+            conditionalOrder.payload
+          )),
           kind: OrderKind.SELL,
           sellTokenBalance: OrderBalance.ERC20,
-          buyTokenBalance: OrderBalance.ERC20
-        }
+          buyTokenBalance: OrderBalance.ERC20,
+        };
 
         // calculate the orderUid
         const orderUid = computeOrderUid(
@@ -69,18 +99,23 @@ export const checkForAndPlaceOrder: ActionFn = async (
             name: "Gnosis Protocol",
             version: "v2",
             chainId: blockEvent.network,
-            verifyingContract: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+            verifyingContract: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
           },
           {
             ...order,
-            receiver: (order.receiver === ethers.constants.AddressZero ? undefined : order.receiver)
+            receiver:
+              order.receiver === ethers.constants.AddressZero
+                ? undefined
+                : order.receiver,
           },
           safeAddress
         );
 
         // if the orderUid has not been submitted, or filled, then place the order
         if (!conditionalOrder.orders.has(orderUid)) {
-          console.log(`Placing orderuid ${orderUid} with Order: ${JSON.stringify(order)}`);
+          console.log(
+            `Placing orderuid ${orderUid} with Order: ${JSON.stringify(order)}`
+          );
 
           await placeOrder(
             { ...order, from: safeAddress, payload: conditionalOrder.payload },
@@ -89,7 +124,11 @@ export const checkForAndPlaceOrder: ActionFn = async (
 
           conditionalOrder.orders.set(orderUid, OrderStatus.SUBMITTED);
         } else {
-          console.log(`OrderUid ${orderUid} status: ${conditionalOrder.orders.get(orderUid)}`);
+          console.log(
+            `OrderUid ${orderUid} status: ${conditionalOrder.orders.get(
+              orderUid
+            )}`
+          );
         }
       } catch (e: any) {
         if (e.code === Logger.errors.CALL_EXCEPTION) {
@@ -99,13 +138,17 @@ export const checkForAndPlaceOrder: ActionFn = async (
               // For example, with TWAPs, this may be after `span` seconds have passed in the epoch.
               continue;
             case "OrderExpired":
-              console.log(`Conditional order on safe ${safeAddress} expired. Unfilled orders:`)
+              console.log(
+                `Conditional order on safe ${safeAddress} expired. Unfilled orders:`
+              );
               printUnfilledOrders(conditionalOrder.orders);
               console.log("Removing conditional order from registry");
               conditionalOrders.delete(conditionalOrder);
               continue;
             case "OrderCancelled":
-              console.log(`Conditional order on safe ${safeAddress} cancelled. Unfilled orders:`)
+              console.log(
+                `Conditional order on safe ${safeAddress} cancelled. Unfilled orders:`
+              );
               printUnfilledOrders(conditionalOrder.orders);
               console.log("Removing conditional order from registry");
               conditionalOrders.delete(conditionalOrder);

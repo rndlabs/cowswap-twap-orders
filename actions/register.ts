@@ -14,7 +14,11 @@ export const addContract: ActionFn = async (context: Context, event: Event) => {
   const iface = ConditionalOrder__factory.createInterface();
 
   const registry = await Registry.load(context, transactionEvent.network);
-  console.log(`Current registry: ${JSON.stringify(Array.from(registry.safeOrders.entries()))}`);
+  console.log(
+    `Current registry: ${JSON.stringify(
+      Array.from(registry.safeOrders.entries())
+    )}`
+  );
 
   transactionEvent.logs.forEach((log) => {
     if (log.topics[0] === iface.getEventTopic("ConditionalOrderCreated")) {
@@ -23,22 +27,32 @@ export const addContract: ActionFn = async (context: Context, event: Event) => {
         log.data,
         log.topics
       );
-      
-      // There are two problems here: 
+
+      // There are two problems here:
       // 1. The safe may already be in the registry, but the payload may not be.
       // 2. The safe may not be in the registry at all.
 
       if (registry.safeOrders.has(safeAddress)) {
-        const conditionalOrders = registry.safeOrders.get(safeAddress)
-        console.log(`adding payload ${payload} to already existing contract ${safeAddress}`)
-        if (!conditionalOrders?.has(payload)) conditionalOrders?.add({ payload, orders: new Map() })
+        const conditionalOrders = registry.safeOrders.get(safeAddress);
+        console.log(
+          `adding payload ${payload} to already existing contract ${safeAddress}`
+        );
+        if (!conditionalOrders?.has(payload))
+          conditionalOrders?.add({ payload, orders: new Map() });
       } else {
-        console.log(`adding payload ${payload} to new contract ${safeAddress}`)
-        registry.safeOrders.set(safeAddress, new Set([{ payload, orders: new Map() }]));
+        console.log(`adding payload ${payload} to new contract ${safeAddress}`);
+        registry.safeOrders.set(
+          safeAddress,
+          new Set([{ payload, orders: new Map() }])
+        );
       }
     }
   });
-  console.log(`Updated registry: ${JSON.stringify(Array.from(registry.safeOrders.entries()))}`);
+  console.log(
+    `Updated registry: ${JSON.stringify(
+      Array.from(registry.safeOrders.entries())
+    )}`
+  );
   await registry.write();
 };
 
@@ -54,14 +68,18 @@ export enum OrderStatus {
 export type ConditionalOrder = {
   payload: BytesLike;
   orders: Map<string, OrderStatus>;
-}
+};
 
 export class Registry {
   safeOrders: Map<string, Set<ConditionalOrder>>;
   storage: Storage;
   network: string;
 
-  constructor(safeOrders: Map<string, Set<ConditionalOrder>>, storage: Storage, network: string) {
+  constructor(
+    safeOrders: Map<string, Set<ConditionalOrder>>,
+    storage: Storage,
+    network: string
+  ) {
     this.safeOrders = safeOrders;
     this.storage = storage;
     this.network = network;
@@ -73,29 +91,36 @@ export class Registry {
   ): Promise<Registry> {
     const str = await context.storage.getStr(storageKey(network));
     if (str === null || str === undefined || str === "") {
-      return new Registry(new Map<string, Set<ConditionalOrder>>(), context.storage, network);
+      return new Registry(
+        new Map<string, Set<ConditionalOrder>>(),
+        context.storage,
+        network
+      );
     }
-    
+
     const safeOrders = JSON.parse(str, reviver);
     return new Registry(safeOrders, context.storage, network);
   }
 
   public async write() {
-    await this.storage.putStr(storageKey(this.network), JSON.stringify(this.safeOrders, replacer));
+    await this.storage.putStr(
+      storageKey(this.network),
+      JSON.stringify(this.safeOrders, replacer)
+    );
   }
 }
 
 // Utilities for serializing and deserializing Maps and Sets
 
 function replacer(_key: any, value: any) {
-  if(value instanceof Map) {
+  if (value instanceof Map) {
     return {
-      dataType: 'Map',
+      dataType: "Map",
       value: Array.from(value.entries()),
     };
   } else if (value instanceof Set) {
     return {
-      dataType: 'Set',
+      dataType: "Set",
       value: Array.from(value.values()),
     };
   } else {
@@ -104,10 +129,10 @@ function replacer(_key: any, value: any) {
 }
 
 function reviver(_key: any, value: any) {
-  if(typeof value === 'object' && value !== null) {
-    if (value.dataType === 'Map') {
+  if (typeof value === "object" && value !== null) {
+    if (value.dataType === "Map") {
       return new Map(value.value);
-    } else if (value.dataType === 'Set') {
+    } else if (value.dataType === "Set") {
       return new Set(value.value);
     }
   }
