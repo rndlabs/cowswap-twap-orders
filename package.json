@@ -13,11 +13,11 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "eslint": "8.27.0",
     "prettier": "^2.8.1",
     "prettier-plugin-solidity": "^1.0.0",
     "solhint": "^3.3.7",
-    "solhint-plugin-prettier": "^0.0.5",
-    "eslint": "8.27.0"
+    "solhint-plugin-prettier": "^0.0.5"
   },
   "scripts": {
     "fmt": "yarn fmt:contracts && yarn fmt:actions && yarn fmt:cli",
@@ -33,5 +33,8 @@
     "lint:cli": "eslint && prettier --check ./cli",
     "build:cli": "cd cli && npm ci && yarn run build",
     "check-deployment": "yarn build:actions && ts-node actions/test/run_local.ts"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.1"
   }
 }
