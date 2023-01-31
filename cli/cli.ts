@@ -344,21 +344,19 @@ class RootCommand extends Command {
     const cmd = new Command(name);
     cmd
       .addOption(
-        new Option(
-          "-s, --safe-address <safeAddress>",
-          "Address of the Safe"
-        ).env("SAFE_ADDRESS")
+        new Option("-s, --safe-address <safeAddress>", "Address of the Safe")
+          .env("SAFE_ADDRESS")
+          .makeOptionMandatory(true)
       )
       .addOption(
-        new Option("-r --rpc-url <rpcUrl>", "URL of the Ethereum node").env(
-          "ETH_RPC_URL"
-        )
+        new Option("-r --rpc-url <rpcUrl>", "URL of the Ethereum node")
+          .env("ETH_RPC_URL")
+          .makeOptionMandatory(true)
       )
       .addOption(
-        new Option(
-          "-p --private-key <privateKey>",
-          "Private key of the account that will sign transaction batches"
-        ).env("PRIVATE_KEY")
+        new Option("-p --private-key <privateKey>", "Private key of the account that will sign transaction batches")
+          .env("PRIVATE_KEY")
+          .makeOptionMandatory(true)
       );
     return cmd;
   }
@@ -427,31 +425,31 @@ async function main() {
       new Option(
         "--sell-token <sellToken>",
         "Address of the token to sell"
-      ).argParser(cliParseAddress)
+      ).argParser(cliParseAddress).makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "--buy-token <buyToken>",
         "Address of the token to buy"
-      ).argParser(cliParseAddress)
+      ).argParser(cliParseAddress).makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "-r, --receiver <receiver>",
         "Address of the receiver of the buy token"
-      ).default(ethers.constants.AddressZero)
+      ).default(ethers.constants.AddressZero).makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "--total-sell-amount <totalSellAmount>",
         "Total amount of the token to sell"
-      ).argParser(cliParseDecimalNumber)
+      ).argParser(cliParseDecimalNumber).makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "--total-min-buy-amount <totalMinBuyAmount>",
         "Minimum amount of the token to buy"
-      ).argParser(cliParseDecimalNumber)
+      ).argParser(cliParseDecimalNumber).makeOptionMandatory(true)
     )
     .addOption(
       new Option(
@@ -460,18 +458,19 @@ async function main() {
       )
         .default(Math.floor(Date.now() / 1000).toString())
         .argParser(cliParseInt)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "-n --num-parts <numParts>",
         "Number of time intervals"
-      ).argParser(parseInt)
+      ).argParser(parseInt).makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "-t --time-interval <frequency>",
         "Duration of each time interval in seconds"
-      ).argParser(parseInt)
+      ).argParser(parseInt).makeOptionMandatory(true)
     )
     .addOption(
       new Option("-s --span <span>", "Duration of the TWAP in seconds")
@@ -483,13 +482,13 @@ async function main() {
   program
     .command("set-fallback-handler")
     .description("Set the fallback handler of the Safe")
-    .option("--handler <handler>", "Address of the fallback handler")
+    .requiredOption("--handler <handler>", "Address of the fallback handler")
     .action(setFallbackHandler);
 
   program
     .command("cancel-order")
     .description("Cancel an order")
-    .option("--order-hash <orderHash>", "ID of the order to cancel")
+    .requiredOption("--order-hash <orderHash>", "ID of the order to cancel")
     .action(cancelOrder);
 
   await program.parseAsync(process.argv);
