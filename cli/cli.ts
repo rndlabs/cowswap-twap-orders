@@ -197,7 +197,11 @@ async function setFallbackHandler(options: SetFallbackHandlerCliOptions) {
     options.handler
   );
 
-  console.log(`Proposing setFallbackHandler Transaction: ${JSON.stringify(safeTransaction.data)}`)
+  console.log(
+    `Proposing setFallbackHandler Transaction: ${JSON.stringify(
+      safeTransaction.data
+    )}`
+  );
   await proposeTransaction(safe, safeService, safeTransaction, signer);
 }
 
@@ -208,7 +212,12 @@ async function setFallbackHandler(options: SetFallbackHandlerCliOptions) {
  * @param tx transaction to propose
  * @param signer used to propose the transaction
  */
-async function proposeTransaction(safe: Safe, safeService: SafeServiceClient, tx: SafeTransaction, signer: ethers.Signer) {
+async function proposeTransaction(
+  safe: Safe,
+  safeService: SafeServiceClient,
+  tx: SafeTransaction,
+  signer: ethers.Signer
+) {
   const safeTxHash = await safe.getTransactionHash(tx);
   const senderSignature = await safe.signTransactionHash(safeTxHash);
   await safeService.proposeTransaction({
@@ -248,7 +257,9 @@ async function cancelOrder(options: CancelOrderCliOptions) {
     options: { nonce: await safeService.getNextNonce(options.safeAddress) },
   });
 
-  console.log(`Proposing cancelOrder Transaction: ${JSON.stringify(safeTransaction.data)}`)
+  console.log(
+    `Proposing cancelOrder Transaction: ${JSON.stringify(safeTransaction.data)}`
+  );
   await proposeTransaction(safe, safeService, safeTransaction, signer);
 }
 
@@ -331,7 +342,9 @@ async function createTwapOrder(options: TWAPCliOptions) {
     options: { nonce: await safeService.getNextNonce(options.safeAddress) },
   });
 
-  console.log(`Proposing TWAP Order Transaction: ${JSON.stringify(safeTransaction.data)}`)
+  console.log(
+    `Proposing TWAP Order Transaction: ${JSON.stringify(safeTransaction.data)}`
+  );
   await proposeTransaction(safe, safeService, safeTransaction, signer);
   console.log(`Conditional order hash for cancelling: ${digest}`);
 }
@@ -354,7 +367,10 @@ class RootCommand extends Command {
           .makeOptionMandatory(true)
       )
       .addOption(
-        new Option("-p --private-key <privateKey>", "Private key of the account that will sign transaction batches")
+        new Option(
+          "-p --private-key <privateKey>",
+          "Private key of the account that will sign transaction batches"
+        )
           .env("PRIVATE_KEY")
           .makeOptionMandatory(true)
       );
@@ -422,34 +438,38 @@ async function main() {
     .command("create-twap")
     .description("Create a TWAP order")
     .addOption(
-      new Option(
-        "--sell-token <sellToken>",
-        "Address of the token to sell"
-      ).argParser(cliParseAddress).makeOptionMandatory(true)
+      new Option("--sell-token <sellToken>", "Address of the token to sell")
+        .argParser(cliParseAddress)
+        .makeOptionMandatory(true)
     )
     .addOption(
-      new Option(
-        "--buy-token <buyToken>",
-        "Address of the token to buy"
-      ).argParser(cliParseAddress).makeOptionMandatory(true)
+      new Option("--buy-token <buyToken>", "Address of the token to buy")
+        .argParser(cliParseAddress)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "-r, --receiver <receiver>",
         "Address of the receiver of the buy token"
-      ).default(ethers.constants.AddressZero).makeOptionMandatory(true)
+      )
+        .default(ethers.constants.AddressZero)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "--total-sell-amount <totalSellAmount>",
         "Total amount of the token to sell"
-      ).argParser(cliParseDecimalNumber).makeOptionMandatory(true)
+      )
+        .argParser(cliParseDecimalNumber)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "--total-min-buy-amount <totalMinBuyAmount>",
         "Minimum amount of the token to buy"
-      ).argParser(cliParseDecimalNumber).makeOptionMandatory(true)
+      )
+        .argParser(cliParseDecimalNumber)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option(
@@ -461,16 +481,17 @@ async function main() {
         .makeOptionMandatory(true)
     )
     .addOption(
-      new Option(
-        "-n --num-parts <numParts>",
-        "Number of time intervals"
-      ).argParser(parseInt).makeOptionMandatory(true)
+      new Option("-n --num-parts <numParts>", "Number of time intervals")
+        .argParser(parseInt)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option(
         "-t --time-interval <frequency>",
         "Duration of each time interval in seconds"
-      ).argParser(parseInt).makeOptionMandatory(true)
+      )
+        .argParser(parseInt)
+        .makeOptionMandatory(true)
     )
     .addOption(
       new Option("-s --span <span>", "Duration of the TWAP in seconds")
