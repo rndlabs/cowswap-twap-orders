@@ -22,7 +22,12 @@ const main = async () => {
 
   // Register the contract that was passed in from the command line to be watched
   const registry = await Registry.load(testRuntime.context, testEvent.network);
-  registry.safeOrders.set(safeUndertest, new Set<ConditionalOrder>([{ payload, orders: new Map<string, OrderStatus>() }]));
+  registry.safeOrders.set(
+    safeUndertest,
+    new Set<ConditionalOrder>([
+      { payload, orders: new Map<string, OrderStatus>() },
+    ])
+  );
   await registry.write();
 
   // run action
