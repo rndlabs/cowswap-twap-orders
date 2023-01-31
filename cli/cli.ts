@@ -16,6 +16,9 @@ import {
   CoWSettlement__factory,
 } from "./types";
 
+import * as dotenv from "dotenv";
+dotenv.config();
+
 // These are constant across all networks supported by CoW Protocol
 const SIGN_MESSAGE_LIB = "0xA65387F16B013cf2Af4605Ad8aA5ec25a2cbA3a2";
 const SETTLEMENT = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41";
