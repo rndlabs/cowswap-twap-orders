@@ -28,11 +28,11 @@
     "fmt:actions": "prettier ./actions -w",
     "build:actions": "cd actions && npm ci && yarn run build",
     "lint:actions": "eslint && prettier --check ./actions",
-    "test:actions": "yarn build:actions && ts-node actions/test/test_register.ts",
+    "test:actions": "yarn build:actions && yarn ts-node actions/test/test_register.ts",
     "fmt:cli": "prettier ./cli -w",
     "lint:cli": "eslint && prettier --check ./cli",
     "build:cli": "cd cli && npm ci && yarn run build",
-    "check-deployment": "yarn build:actions && ts-node actions/test/run_local.ts"
+    "check-deployment": "yarn build:actions && yarn ts-node actions/test/run_local.ts"
   },
   "dependencies": {
     "ts-node": "^10.9.1"
