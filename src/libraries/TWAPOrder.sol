@@ -68,11 +68,13 @@ library TWAPOrder {
     /// @param self The TWAP order to generate the order for.
     /// @return order The `GPv2Order` for the current part.
     function orderFor(Data memory self) internal view returns (GPv2Order.Data memory order) {
+        // First, validate and revert if the TWAP is invalid.
+        validate(self);
+
         // Calculate the `validTo` timestamp for the order. This is unique for each part of the TWAP order.
         // As `validTo` is unique, there is a corresponding unique `orderUid` for each `GPv2Order`. As
         // CoWProtocol enforces that each `orderUid` is only used once, this means that each part of the TWAP
         // order can only be executed once.
-
         order = GPv2Order.Data({
             sellToken: self.sellToken,
             buyToken: self.buyToken,
