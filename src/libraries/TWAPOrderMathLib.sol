@@ -71,8 +71,8 @@ library TWAPOrderMathLib {
             /// shall always be positive.
             validTo = startTime + (part * frequency) + span - 1;
 
-            /// @dev Order is not valid if not within nominated span
-            if (!(block.timestamp <= validTo)) revert ConditionalOrder.OrderNotValid();
+            /// @dev Order is not valid if not within nominated span. This doesn't need to be asserted as it is
+            /// checked during settlement in `GPv2Settlement.settle`.
         }
     }
 }
