@@ -232,7 +232,7 @@ contract CoWTWAPFallbackHandlerTest is Base {
     }
 
     function test_dispatch_FuzzRevertOnInvalidNumParts(uint256 numParts) public {
-        vm.assume(numParts < 2 || numParts >= type(uint32).max);
+        vm.assume(numParts < 2 || numParts > type(uint32).max);
         // Revert if not an actual TWAP (ie. numParts < 2)
         TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
         twapOrder.n = numParts;
@@ -242,7 +242,7 @@ contract CoWTWAPFallbackHandlerTest is Base {
     }
 
     function test_dispatch_FuzzRevertOnInvalidFrequency(uint256 frequency) public {
-        vm.assume(frequency < 1 || frequency >= type(uint32).max);
+        vm.assume(frequency < 1 || frequency > 365 days);
         TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);
         twapOrder.t = frequency;
 
@@ -757,7 +757,7 @@ contract CoWTWAPFallbackHandlerTest is Base {
         numParts = bound(numParts, 2, type(uint32).max);
 
         // frequency is asserted to be less than 365 days worth of seconds in the TWAP order, and at least 1 second
-        vm.assume(frequency >= 1 && frequency <= 365 days);
+        vm.assume(frequency > 0 && frequency <= 365 days);
 
         // The span is defined as the number of seconds that the TWAP order is valid for within each period. If the
         // span is 0, then the TWAP order is valid for the entire period. We can assume that the span is less than or
