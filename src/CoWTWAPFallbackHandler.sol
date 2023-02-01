@@ -3,6 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import {GPv2Order} from "cowprotocol/libraries/GPv2Order.sol";
 
+import {ConditionalOrder} from "./interfaces/ConditionalOrder.sol";
 import {TWAPOrder} from "./libraries/TWAPOrder.sol";
 import {CoWFallbackHandler} from "./CoWFallbackHandler.sol";
 
@@ -22,7 +23,7 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         super.dispatch(payload);
     }
 
-    function getTradeableOrder(bytes calldata payload) external view override returns (GPv2Order.Data memory) {
+    function getTradeableOrder(bytes calldata payload) external view override returns (GPv2Order.Data memory order) {
         /// @dev This will revert if the order isn't signed or is cancelled.
         _onlySignedAndNotCancelled(payload);
 
@@ -31,7 +32,10 @@ contract CoWTWAPFallbackHandler is CoWFallbackHandler {
         /// NOTE: This will return an order even if the part of the TWAP bundle that is currently
         /// valid is filled. This is safe as CoW Protocol ensures that each `orderUid` is only
         /// settled once.
-        return TWAPOrder.orderFor(abi.decode(payload, (TWAPOrder.Data)));
+        order = TWAPOrder.orderFor(abi.decode(payload, (TWAPOrder.Data)));
+
+        /// @dev Revert if the order is outside the TWAP bundle's span.
+        if (!(block.timestamp <= order.validTo)) revert ConditionalOrder.OrderNotValid();
     }
 
     /// @inheritdoc CoWFallbackHandler

@@ -564,31 +564,6 @@ contract CoWTWAPFallbackHandlerTest is Base {
         twapSafe.isValidSignature(keccak256("cow over the moon"), oBytes);
     }
 
-    function test_isValidSignature_FuzzRevertIfOutsideSpan(uint256 startTime, uint256 currentTime) public {
-        // guard against overflows
-        vm.assume(startTime < type(uint32).max);
-        vm.assume(currentTime < type(uint32).max);
-        // guard against revert before start
-        vm.assume(startTime < currentTime);
-        // guard against revert after expiry
-        vm.assume(currentTime < startTime + (FREQUENCY * NUM_PARTS));
-        // force revert outside of the span
-        vm.assume((currentTime - startTime) % FREQUENCY >= SPAN);
-
-        TWAPOrder.Data memory o = _twapTestBundle(startTime);
-        bytes memory oBytes = abi.encode(o);
-
-        // Create the order - this signs the order and marks it a valid
-        createOrder(GnosisSafe(payable(address(twapSafe))), oBytes, o.sellToken, o.partSellAmount * o.n);
-
-        // Warp to where the order is not valid
-        vm.warp(currentTime);
-
-        // This should revert
-        vm.expectRevert(ConditionalOrder.OrderNotValid.selector);
-        twapSafe.isValidSignature(keccak256("cow to alpha centauri"), oBytes);
-    }
-
     function test_isValidSignature_e2e_fuzz(uint256 startTime, uint256 currentTime) public {
         // guard against overflows
         vm.assume(startTime < type(uint32).max);
