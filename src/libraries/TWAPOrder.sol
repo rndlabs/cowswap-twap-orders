@@ -59,8 +59,8 @@ library TWAPOrder {
         if (!(self.partSellAmount > 0)) revert InvalidPartSellAmount();
         if (!(self.minPartLimit > 0)) revert InvalidMinPartLimit();
         if (!(self.t0 < type(uint32).max)) revert InvalidStartTime();
-        if (!(self.n > 1 && self.n < type(uint32).max)) revert InvalidNumParts();
-        if (!(self.t > 0 && self.t < type(uint32).max)) revert InvalidFrequency();
+        if (!(self.n > 1 && self.n <= type(uint32).max)) revert InvalidNumParts();
+        if (!(self.t > 0 && self.t <= 365 days)) revert InvalidFrequency();
         if (!(self.span <= self.t)) revert InvalidSpan();
     }
 

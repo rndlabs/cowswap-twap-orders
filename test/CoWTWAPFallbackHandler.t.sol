@@ -251,7 +251,7 @@ contract CoWTWAPFallbackHandlerTest is Base {
     }
 
     function test_dispatch_FuzzRevertOnInvalidSpan(uint256 frequency, uint256 span) public {
-        vm.assume(frequency > 0 && frequency < type(uint32).max);
+        vm.assume(frequency > 0 && frequency <= 365 days);
         vm.assume(span > frequency);
 
         TWAPOrder.Data memory twapOrder = _twapTestBundle(block.timestamp);

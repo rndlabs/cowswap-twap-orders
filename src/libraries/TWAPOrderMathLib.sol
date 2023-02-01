@@ -22,7 +22,7 @@ library TWAPOrderMathLib {
         /// @dev Use `assert` to check for invalid inputs as these should be caught by the
         /// conditional order validation logic in `dispatch` before calling this function.
         /// This is to save on gas deployment costs vs using `require` statements.
-        assert(numParts <= type(uint32).max);
+        assert(numParts > 1 && numParts <= type(uint32).max);
         assert(frequency > 0 && frequency <= 365 days);
         assert(span <= frequency);
 
