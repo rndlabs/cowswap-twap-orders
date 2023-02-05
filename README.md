@@ -222,8 +222,6 @@ tenderly actions deploy
 
 ## Developers
 
-***Note**: The contracts in this repository may not have been properly audited and could contain logic errors. Use at your own risk.*
-
 ### Requirements
 
 * `forge` ([Foundry](https://github.com/foundry-rs/foundry))
@@ -234,10 +232,13 @@ tenderly actions deploy
 
 ### Deployed Contracts
 
-| Contact Name | Goerli |
-| -------- | --- |
-| `CoWTWAPFallbackHandler` | [`0xf7602F1217F106FeA09423A1457aDc1487e4d153`](https://goerli.etherscan.io/address/0xf7602F1217F106FeA09423A1457aDc1487e4d153#code)     |
+Contracts within have been audited by Group0. [See their audit report here](./audits/Group0_CowTwapOrdersJan2023.pdf).
 
+| Contact Name | Ethereum Mainnet | Goerli | Gnosis Chain |
+| -------- | --- | --- | --- |
+| `CoWTWAPFallbackHandler` | [`0x87b52ed635df746ca29651581b4d87517aaa9a9f`](https://etherscan.io/address/0x87b52ed635df746ca29651581b4d87517aaa9a9f#code) | [`0x87b52ed635df746ca29651581b4d87517aaa9a9f`](https://goerli.etherscan.io/address/0x87b52ed635df746ca29651581b4d87517aaa9a9f#code) | [`0x87b52ed635df746ca29651581b4d87517aaa9a9f`](https://gnosisscan.io/address/0x87b52ed635df746ca29651581b4d87517aaa9a9f#code) |
+
+**NOTE:** Due to some issues between `forge` and gnosisscan, contracts are verified on sourcify, and therefore viewabled on [here on blockscout](https://blockscout.com/xdai/mainnet/address/0x87b52eD635DF746cA29651581B4d87517AAa9a9F/contracts#address-tabs) for Gnosis Chain. All other deployments are verified on their respective Etherscan-derivative block explorer.
 
 ### Environment setup
 
