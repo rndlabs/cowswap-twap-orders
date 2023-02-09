@@ -153,7 +153,7 @@ Commands:
 1. Setting a safe's fallback handler
 
    ```bash
-   yarn ts-node cli.ts set-fallback-handler -s 0xdc8c452D81DC5E26A1A73999D84f2885E04E9AC3 --handler 0xf7602F1217F106FeA09423A1457aDc1487e4d153
+   yarn ts-node cli.ts set-fallback-handler -s 0xdc8c452D81DC5E26A1A73999D84f2885E04E9AC3 --handler 0x87b52ed635df746ca29651581b4d87517aaa9a9f
    ```
    
    Check your safe's transaction queue and you should see the newly created transaction.
