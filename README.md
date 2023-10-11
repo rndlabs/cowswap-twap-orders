@@ -1,3 +1,9 @@
+# 🚨 Repository deprecated
+
+This repository was the formative work of what has grown to become the [`ComposableCoW` conditional order framework](https://github.com/cowprotocol/composable-cow). This includes the repository for the work having been moved to the [`cowprotocol` GitHub organisation](https://github.com/cowprotocol).
+
+If you've come here curious about Cow Swap's recent launch of TWAP, check their [article here](https://blog.cow.fi/cow-swap-launches-twap-orders-d5583135b472).
+
 # CoW Protocol Conditional Orders
 
 This repository extends [`conditional-smart-orders`](https://github.com/cowprotocol/conditional-smart-orders), providing tight integration with [Safe](https://safe.global). It use's Safe's `SignMessageLib` to *sign* conditional orders. In doing so we:
